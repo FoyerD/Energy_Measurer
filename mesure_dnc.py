@@ -81,6 +81,7 @@ def setup_dnc_algo():
         statistics=BestAverageWorstStatistics(), random_seed=4242
     )
 
+
 def merge_csv():
     # Load the CSV files
     cpu_data = pd.read_csv('./out_files/mesures/cpu_' + job_id + '.csv')  # Replace with your actual file name
