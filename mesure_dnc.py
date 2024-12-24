@@ -76,15 +76,15 @@ def setup_dnc_algo():
                       ),
         breeder=SimpleBreeder(),
         max_workers=1,
-        max_generation=50,
+        max_generation=10,
         # termination_checker=ThresholdFromTargetTerminationChecker(optimal=100, threshold=0.0),
         statistics=BestAverageWorstStatistics(), random_seed=4242
     )
 
 def merge_csv():
     # Load the CSV files
-    cpu_data = pd.read_csv('out_files/mesures/cpu_' + job_id + '.csv')  # Replace with your actual file name
-    gpu_data = pd.read_csv('out_files/mesures/gpu_' + job_id + '.csv')  # Replace with your actual file name
+    cpu_data = pd.read_csv('./out_files/mesures/cpu_' + job_id + '.csv')  # Replace with your actual file name
+    gpu_data = pd.read_csv('./out_files/mesures/gpu_' + job_id + '.csv')  # Replace with your actual file name
 
     # Merge the two DataFrames
     merged_data = pd.concat([cpu_data, gpu_data])
@@ -94,7 +94,7 @@ def merge_csv():
     merged_data = merged_data.sort_values(by='time')
 
     # Save the merged data to a new CSV file
-    merged_data.to_csv('out_files/mesures/merged_' + job_id + '.csv', index=False)
+    merged_data.to_csv('./out_files/mesures/merged_' + job_id + '.csv', index=False)
     return merged_data
     
 
@@ -108,6 +108,7 @@ def plot_graph(merged_data):
     plt.figure(figsize=(12, 6))
     for data_type, group in merged_data.groupby('type'):
         plt.plot(group['time'], group['measure'], label=data_type)
+        if(group['start_gen']): plt.axvline(x=group['time'])
 
 
     # Add labels, title, and legend
@@ -117,14 +118,17 @@ def plot_graph(merged_data):
     plt.legend(title='Type')
     plt.grid(True)
 
-    plt.savefig('measure_vs_time.png', dpi=300, bbox_inches='tight')  # Adjust dpi for resolution
+    plt.savefig('out_files/plots/plot_' + job_id + '.png', dpi=300, bbox_inches='tight')  # Adjust dpi for resolution
 
 def main():
     assert (len(sys.argv) >= 1)
     sleep_time = 60 * 4
-    prober = subprocess.Popen(["python", "./code_files/python_files/prob_nvsmi.py", job_id])
+    prober = subprocess.Popen(["python", "./code_files/energy_mesurer/prob_nvsmi.py", job_id])
     sleep(sleep_time)
+
     algo = setup_dnc_algo()
+    statistics_logger = Logger(output_file="./out_files/statistics_" + job_id + ".csv", job_id=job_id)
+    statistics_logger.setup_evolution_statistics(algo)
     # evolve the generated initial population
     algo.evolve()
     # Execute (show) the best solution

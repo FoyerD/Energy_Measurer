@@ -44,8 +44,15 @@ class Logger():
         self.update_column("time", lambda: datetime.now())
         self.update_column("computation", lambda: "GPU")
         self.update_column("mesure", lambda: str(subprocess.check_output(["nvidia-smi", "--query-gpu=power.draw", "--format=csv"]))[18:-5])
+        self.update_column("start_gen", lambda: False)
 
     def setup_CPU(self):
         self.update_column("time", lambda: datetime.now())
         self.update_column("computation", lambda: "CPU")
         self.update_column("CPU", lambda: str(subprocess.check_output(["sstat", "-j" + self._job_id, "-a", "--format=ConsumedEnergyRaw"])).split("\\n")[-2].strip())
+        self.update_column("start_gen", lambda: True)
+        
+    def setup_evolution_statistics(self, algo):
+        self.update_column("best", lambda: algo)
+        self.update_column("avg", lambda: algo)
+        self.update_column("median", lambda: algo)
