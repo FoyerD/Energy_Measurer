@@ -13,8 +13,7 @@ from DNC_mid_train.multiparent_wrapper import BEFORE_TRAIN_EVENT_NAME, AFTER_TRA
 from Logger import Logger
 import sys
 from time import sleep
-import matplotlib.pyplot as plt
-
+from Plotter import get_dual_graph#, get_statistics_graph, get_mesure_graph, plt_clear
 
 def setup_dnc_algo():
     fitness_dict = {}
@@ -27,7 +26,7 @@ def setup_dnc_algo():
 
     ind_length = dataset_n_items
     min_bound, max_bound = 0, dataset_n_items - 1
-    population_size = 1000
+    population_size = 100
 
     individual_creator = GAIntegerStringVectorCreator(length=ind_length, bounds=(min_bound, max_bound))
     bpp_eval = dnc_runner_eckity.BinPackingEvaluator(n_items=dataset_n_items, item_weights=dataset_item_weights,
@@ -38,28 +37,20 @@ def setup_dnc_algo():
         sequence_length=ind_length,
         num_embeddings=dataset_n_items + 1,
         running_mean_decay=0.95,
-        batch_size=1024,
+        batch_size=512,
         learning_rate=1e-4,
         use_device='cuda',
         n_parents=2,
-        epsilon_greedy=0.3
+        epsilon_greedy=0.2
     )
 
     dnc_op = DeepNeuralCrossover(probability=0.8, population_size=population_size, dnc_config=dnc_config,
                                  individual_evaluator=bpp_eval, vector_creator=individual_creator)
     
-    logger_start = Logger(job_id=job_id, output_file="./out_files/mesures/cpu_" + job_id + ".csv")
-    logger_start.setup_CPU_before_train()
-    logger_start.log_headers()
-    dnc_op.dnc_wrapper.register(BEFORE_TRAIN_EVENT_NAME, logger_start.log)
-    
-    logger_fin = Logger(job_id=job_id, output_file="./out_files/mesures/cpu_" + job_id + ".csv")
-    logger_fin.setup_CPU_after_train()
-    dnc_op.dnc_wrapper.register(AFTER_TRAIN_EVENT_NAME, logger_fin.log)
 
 
     # Initialize the evolutionary algorithm
-    return SimpleEvolution(
+    algo = SimpleEvolution(
         Subpopulation(creators=individual_creator,
                       population_size=population_size,
                       # user-defined fitness evaluation method
@@ -79,60 +70,26 @@ def setup_dnc_algo():
                       ),
         breeder=SimpleBreeder(),
         max_workers=1,
-        max_generation=50000,
+        max_generation=10,
         # termination_checker=ThresholdFromTargetTerminationChecker(optimal=100, threshold=0.0),
         statistics=BestAverageWorstStatistics(), random_seed=4242
     )
 
-
-def merge_csv():
-    # Load the CSV files
-    cpu_data = pd.read_csv('./out_files/mesures/cpu_' + job_id + '.csv')  
-    gpu_data = pd.read_csv('./out_files/mesures/gpu_' + job_id + '.csv')  
-    # Merge the two DataFrames
-    merged_data = pd.concat([cpu_data, gpu_data])
-
-    # Optionally, sort the merged data by time
-    merged_data['time'] = pd.to_datetime(merged_data['time'])  # Ensure 'time' column is datetime
-    merged_data = merged_data.sort_values(by='time')
-
-    # Save the merged data to a new CSV file
-    merged_data.to_csv('./out_files/mesures/merged_' + job_id + '.csv', index=False)
-    return merged_data
+    logger_start = Logger(job_id=job_id, output_file="./out_files/mesures/cpu_" + job_id + ".csv")
+    logger_start.setup_CPU_before_train(algo)
+    logger_start.log_headers()
+    dnc_op.dnc_wrapper.register(BEFORE_TRAIN_EVENT_NAME, logger_start.log)
     
-def plot_graphs(merged_data, statistics):
-    # Replace GPU measure by the cumulative sum of GPU measures
-    merged_data.loc[merged_data['type'] == 'GPU', 'measure'] = merged_data.loc[
-        merged_data['type'] == 'GPU', 'measure'
-    ].cumsum()   
+    logger_fin = Logger(job_id=job_id, output_file="./out_files/mesures/cpu_" + job_id + ".csv")
+    logger_fin.setup_CPU_after_train(algo)
+    dnc_op.dnc_wrapper.register(AFTER_TRAIN_EVENT_NAME, logger_fin.log)
 
-    fig, ax_left = plt.subplots()
-    # Plot the data
-    plt.figure(figsize=(12, 6))
-    for data_type, group in merged_data.groupby('type'):
-        ax_left.plot(group['time'], group['measure'], label=data_type)
-    for train_status, group in merged_data.groupby('train_status'):
-        if(train_status == 'Start'):
-            [ax_left.axvline(x=time, ymax=0.1, color='green') for time in group['time']]
-        elif(train_status == 'Finish'):
-            [ax_left.axvline(x=time, ymax=0.1, color='red') for time in group['time']]
-    ax_left.set_ylabel('mesures')
-    ax_left.set_xlabel('time')
-
-    ax_right = ax_left.twinx()
-    ax_right.plot(statistics['time'], statistics['best_of_gen'], label='best_of_gen', color='silver')
-    ax_right.plot(statistics['time'], statistics['best_of_run'], label='best_of_run', color='gold')
-    ax_right.plot(statistics['time'], statistics['average'], label='average', color='chocolate')
-    ax_right.set_ylabel('statistics')
-
-    fig.suptitle('Measure/Statistics vs Time')
-    fig.legend()
-    fig.savefig('out_files/plots/plot_' + job_id + '.png', dpi=300, bbox_inches='tight')  # Adjust dpi for resolution
+    return algo
 
 
 def main():
     assert (len(sys.argv) >= 1)
-    sleep_time = 60 * 4
+    sleep_time = 60 * 0.1
     prober = subprocess.Popen(["python", "./code_files/energy_mesurer/prob_nvsmi.py", job_id])
     sleep(sleep_time)
 
@@ -146,11 +103,11 @@ def main():
     # Execute (show) the best solution
     algo.execute()
     prober.kill()
-    merged_data = merge_csv()
-    statistics = pd.read_csv('./out_files/statistics/statistics_' + job_id + '.csv')
-    statistics['time'] = pd.to_datetime(statistics['time'])  # Ensure 'time' column is datetime
-    statistics = statistics.sort_values(by='time')
-    plot_graphs(merged_data, statistics)
+    get_dual_graph(job_id)
+    #plt_clear()
+    #get_mesure_graph(job_id)
+    #plt_clear()
+    #get_statistics_graph(job_id)
 
 if __name__ == "__main__":
     job_id = str(sys.argv[1])
