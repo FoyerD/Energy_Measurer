@@ -70,7 +70,7 @@ def setup_dnc_algo():
                       ),
         breeder=SimpleBreeder(),
         max_workers=1,
-        max_generation=10,
+        max_generation=6000,
         # termination_checker=ThresholdFromTargetTerminationChecker(optimal=100, threshold=0.0),
         statistics=BestAverageWorstStatistics(), random_seed=4242
     )
@@ -98,6 +98,11 @@ def main():
     statistics_logger.setup_evolution_statistics(algo)
     statistics_logger.log_headers()
     algo.register("after_generation", statistics_logger.log)
+    
+    logger_cpu_mid = Logger(job_id=job_id, output_file="./out_files/mesures/cpu_" + job_id + ".csv")
+    logger_cpu_mid.setup_CPU_before_train(algo)
+    logger_cpu_mid.update_column("train_status", lambda: "Middle")
+    algo.register("after_generation", logger_cpu_mid.log)
     # evolve the generated initial population
     algo.evolve()
     # Execute (show) the best solution
