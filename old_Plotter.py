@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import sys
 
 
+
 def plot_graphs(gpu_db, cpu_db, statistics_db, job_id):
     fig, ax_left = plt.subplots()
     
