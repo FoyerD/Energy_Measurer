@@ -26,6 +26,7 @@ class ECkittyFactory:
                       learning_rate: float = 1e-4,
                       n_parents: int = 2,
                       epsilon_greedy: float = 0.2,
+                      population_size:int = 100,
                       events = None,
                       loggers: list = None,
                       log_events:list = None):
@@ -38,7 +39,6 @@ class ECkittyFactory:
 
         ind_length = dataset_n_items
         min_bound, max_bound = 0, dataset_n_items - 1
-        population_size = 100
 
         individual_creator = GAIntegerStringVectorCreator(length=ind_length, bounds=(min_bound, max_bound))
         bpp_eval = dnc_runner_eckity.BinPackingEvaluator(n_items=dataset_n_items, item_weights=dataset_item_weights,
