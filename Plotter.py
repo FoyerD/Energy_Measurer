@@ -16,21 +16,25 @@ class Plotter:
             db['time'] = pd.to_datetime(db['time'])
             db['time_diff'] = (db['time'] - db['time'].min()).dt.total_seconds()
         
-    def add_marker(self, time:int, col, db_n: int=0,marker='o'):
+    def add_marker(self, time:float, col, db_n: float=0,marker='o'):
         timedif_col = f'time_diff_{time/60}'
         self._dbs[db_n][timedif_col] = (self._dbs[db_n]['time'] - time).abs()
         marker_idx = self._dbs[db_n][timedif_col].idxmin()
         marker_row = self._dbs[db_n].loc[marker_idx]
         self._axs[db_n].scatter(marker_row[self._x_col], marker_row[col], color='black', zorder=5, label=f'{time/60} min', marker=marker)
     
-    def take_above(self, col, value, db_n:int=0):
+    def take_above(self, col, value, db_n:float=0):
         self._dbs[db_n] = self._dbs[db_n][self._dbs[db_n][col] >= value]
     
-    def take_below(self, col, value, db_n:int=0):
+    def take_below(self, col, value, db_n:float=0):
         self._dbs[db_n] = self._dbs[db_n][self._dbs[db_n][col] <= value]
     
-    def add_plot(self, col, color, db_n:int=0, label:str=None):
+    def add_plot(self, col, color=None, db_n:float=0, label:str=None):
         self._axs[db_n].plot(self._dbs[db_n][self._x_col], self._dbs[db_n][col], label=label if label is not None else col, color=color)
+    
+    def add_groupby_max_plot(self, col, db_n:float=0, label:str=None):
+        grouped = self._dbs[db_n].groupby(self._x_col)[col].max()
+        grouped.plot(kind='line', ax=self._axes[db_n], label=label if label is not None else col)
     
     def save_fig(self, path:str, title:str, x_labels:str, y_labels:str):
         for i, labels in enumerate(zip(x_labels, y_labels)):

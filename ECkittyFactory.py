@@ -1,8 +1,4 @@
-import subprocess
-import pandas as pd
 from eckity.algorithms.simple_evolution import SimpleEvolution
-from eckity.breeders.simple_breeder import SimpleBreeder
-from eckity.statistics.best_average_worst_statistics import BestAverageWorstStatistics
 from eckity.subpopulation import Subpopulation
 import json
 import numpy as np
@@ -12,7 +8,7 @@ from eckity.creators import Creator
 from eckity.evaluators import IndividualEvaluator
 from eckity.breeders import Breeder
 from eckity.statistics import Statistics
-from time import sleep
+from DNC_mid_train.DNC_eckity_wrapper import BEFORE_TRAIN_EVENT_NAME, AFTER_TRAIN_EVENT_NAME
 
 
 class ECkittyFactory:
