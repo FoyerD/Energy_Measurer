@@ -79,13 +79,20 @@ class Mesurer:
             merged_db['type'] == 'GPU', 'measure'
         ].cumsum() 
         merged_db = merged_db.bfill().ffill() #filling empty gen entries of GPU
+        # Split the merged_db into two DataFrames based on 'type'
+        gpu_db_split = merged_db[merged_db['type'] == 'GPU'].reset_index(drop=True)
+        cpu_db_split = merged_db[merged_db['type'] == 'CPU'].reset_index(drop=True)
+
         
-        plotter = Plotter(x_col='gen', db1=merged_db, db2=statistics_db, job_id=self._job_id)
-        plotter.add_groupby_max_plot(col='mesure', db_n=0, label='cpu joules', )
-        plotter.add_plot(col='average', db_n=1)
-        plotter.add_plot(col='best_of_gen', db_n=1)
         
-        plotter.add_marker(time = 5*60, col='best_of_gen', db_n=1)
+        
+        plotter = Plotter(x_col='gen', dbs=[cpu_db_split, gpu_db_split, statistics_db], job_id=self._job_id)
+        plotter.add_groupby_max_plot(col='mesure', db_n=1, axes_n=0, label='gpu joules')
+        plotter.add_plot(col='mesure', db_n=0, axes_n=0, label='cpu joules')
+        plotter.add_plot(col='average', db_n=2, axes_n=1, label='average fitness')
+        plotter.add_plot(col='best_of_gen', db_n=2, axes_n=1, label='best of gen fitness')
+        
+        plotter.add_marker(time = 5*60, col='best_of_gen', db_n=1, axes_n=1)
         plotter.take_above(col='average', value=0, db_n=1)
         plotter.take_above(col='best_of_gen', value=0, db_n=1)
         
