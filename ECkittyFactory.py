@@ -6,9 +6,8 @@ from DNC_mid_train.DNC_eckity_wrapper import DeepNeuralCrossoverConfig, GAIntege
 from DNC_mid_train import dnc_runner_eckity
 from eckity.creators import Creator
 from eckity.evaluators import IndividualEvaluator
-from eckity.breeders import Breeder
-from eckity.statistics import Statistics
-from DNC_mid_train.DNC_eckity_wrapper import BEFORE_TRAIN_EVENT_NAME, AFTER_TRAIN_EVENT_NAME
+from eckity.breeders import Breeder, SimpleBreeder
+from eckity.statistics import Statistics, BestAverageWorstStatistics
 
 
 class ECkittyFactory:
@@ -27,7 +26,7 @@ class ECkittyFactory:
                       loggers: list = None,
                       log_events:list = None):
         fitness_dict = {}
-        datasets_json = json.load(open('./datasets/hard_parsed.json', 'r'))
+        datasets_json = json.load(open('./code_files/energy_measurer/datasets_dnc/hard_parsed.json', 'r'))
         dataset_name = 'BPP_14'
         dataset_item_weights = np.array(datasets_json[dataset_name]['items'])
         dataset_bin_capacity = datasets_json[dataset_name]['max_bin_weight']
@@ -59,15 +58,18 @@ class ECkittyFactory:
            and len(loggers) == len(log_events)):
             for logger, log_event in zip(loggers, log_events):
                 dnc_op.dnc_wrapper.register(log_event, logger.log)
+        
+        return dnc_op, datasets_json[dataset_name]
                 
     def create_simple_evo(self,
                           individual_creator:Creator,
                           evaluator: IndividualEvaluator,
                           operators_sequence:list,
                           selection_methods:list,
-                          statistics:Statistics,
+                          statistics:Statistics=None,
                           population_size:int=100,
                           breeder:Breeder=None,
+                          higher_is_better:bool=True,
                           max_workers:int=1,
                           max_generation:int=1000,
                           loggers:list=None,
@@ -76,20 +78,21 @@ class ECkittyFactory:
             Subpopulation(creators=individual_creator,
                           population_size=population_size,
                           evaluator=evaluator,
-                          higher_is_better=True,
+                          higher_is_better=higher_is_better,
                           operators_sequence=operators_sequence,
                           selection_methods=selection_methods),
-            breeder=breeder,
+            breeder=breeder if breeder is not None else SimpleBreeder(),
             max_workers=max_workers,
             max_generation=max_generation,
-            statistics=statistics, random_seed=4242
+            statistics=statistics if statistics is not None else BestAverageWorstStatistics(), random_seed=4242
         )
         
         if(loggers is not None and log_events is not None
            and len(loggers) == len(log_events)):
             for logger, log_event in zip(loggers, log_events):
                 algo.register(log_event, logger.log)
-        
+        #TODO! ADD MEDIAN STATISTICS to eckitty itself
+        #TODO! Pull into dnc
         return algo
         
         

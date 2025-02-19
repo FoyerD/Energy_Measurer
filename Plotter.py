@@ -5,7 +5,7 @@ class Plotter:
     def __init__(self, x_col, dbs: list):
         self._x_col = x_col
         self._fig, self._ax_left = plt.subplots()
-        
+        self._ax_right = self._ax_left.twinx()
         self._axes = [self._ax_left, self._ax_right]
         self._dbs = []
         

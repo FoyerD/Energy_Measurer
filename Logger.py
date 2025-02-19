@@ -15,7 +15,7 @@ class Logger():
         '''
         self._columns[name] = lamd
 
-    def log(self):
+    def log(self, *args, **kwargs):
         log_entry = {key: str(self._columns[key]()) for key in self._columns}
         self._log_data.append(log_entry)
 
@@ -28,11 +28,11 @@ class Logger():
     def add_str_col(self, name: str, value: str):
         self.update_column(name, lambda: value)
         
-    def add_cpu_mesure_col(self, job_id: str):
+    def add_cpu_measure_col(self, job_id: str):
         self.update_column("measure", lambda: str(subprocess.check_output(["sstat", "-j" + job_id, "-a", "--format=ConsumedEnergyRaw"])).split("\\n")[-2].strip())
         self.add_str_col("type", "CPU")
     
-    def add_gpu_mesure_col(self):
+    def add_gpu_measure_col(self):
         self.update_column("measure", lambda: str(subprocess.check_output(["nvidia-smi", "--query-gpu=power.draw", "--format=csv"]))[18:-5])    
         self.add_str_col("type", "GPU")
         
@@ -48,6 +48,12 @@ class Logger():
             df.to_csv(path, index=False, mode='a', header=False)
         else:
             df.to_csv(path, index=False)
-
-
+    
+    def empty_logs(self):
+        self._log_data = []
+    
+    def log_headers(self, path: str):
+        headers = list(self._columns.keys())
+        with open(path, "w") as file_obj:
+            print(",".join(headers), file=file_obj)
 

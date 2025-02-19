@@ -1,5 +1,4 @@
 import subprocess
-import pandas as pd
 from eckity.algorithms.simple_evolution import SimpleEvolution
 from eckity.breeders.simple_breeder import SimpleBreeder
 from eckity.genetic_operators.selections.tournament_selection import TournamentSelection
