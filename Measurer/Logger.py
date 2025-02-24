@@ -1,3 +1,4 @@
+import os
 import subprocess
 from datetime import datetime
 import pandas as pd
@@ -45,9 +46,9 @@ class Logger():
     def to_csv(self, path: str, append: bool = False):
         df = pd.DataFrame(self._log_data)
         if append:
-            df.to_csv(path, index=False, mode='a', header=False)
+            df.to_csv(path, index=False, mode='a', header=not os.path.exists(path))
         else:
-            df.to_csv(path, index=False)
+            df.to_csv(path, index=False, header=not os.path.exists(path))
     
     def empty_logs(self):
         self._log_data = []
@@ -57,3 +58,5 @@ class Logger():
         with open(path, "w") as file_obj:
             print(",".join(headers), file=file_obj)
 
+    def num_logs(self):
+        return len(self._log_data)

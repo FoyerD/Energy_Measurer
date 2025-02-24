@@ -8,6 +8,7 @@ from eckity.creators import Creator
 from eckity.evaluators import IndividualEvaluator
 from eckity.breeders import Breeder, SimpleBreeder
 from eckity.statistics import Statistics, BestAverageWorstStatistics
+from torch.cuda import is_available
 
 
 class ECkittyFactory:
@@ -15,18 +16,19 @@ class ECkittyFactory:
         self._job_id = str(job_id)
     
     def create_dnc_op(self,
+                      db_path:str,
                       embedding_dim: int = 64,
                       running_mean_decay: float = 0.95,
-                      batch_size: int = 512,
+                      batch_size: int = 1024,
                       learning_rate: float = 1e-4,
                       n_parents: int = 2,
-                      epsilon_greedy: float = 0.2,
+                      epsilon_greedy: float = 0.3,
                       population_size:int = 100,
                       events = None,
                       loggers: list = None,
                       log_events:list = None):
         fitness_dict = {}
-        datasets_json = json.load(open('./code_files/energy_measurer/datasets_dnc/hard_parsed.json', 'r'))
+        datasets_json = json.load(open(db_path, 'r'))
         dataset_name = 'BPP_14'
         dataset_item_weights = np.array(datasets_json[dataset_name]['items'])
         dataset_bin_capacity = datasets_json[dataset_name]['max_bin_weight']
@@ -46,7 +48,7 @@ class ECkittyFactory:
             running_mean_decay=running_mean_decay,
             batch_size=batch_size,
             learning_rate=learning_rate,
-            use_device='cuda',
+            use_device='cuda' if is_available() else 'cpu',
             n_parents=n_parents,
             epsilon_greedy=epsilon_greedy
         )
@@ -80,7 +82,7 @@ class ECkittyFactory:
                           evaluator=evaluator,
                           higher_is_better=higher_is_better,
                           operators_sequence=operators_sequence,
-                          selection_methods=selection_methods),
+                          selection_methods=list(map(lambda x: (x, 1/len(selection_methods)),selection_methods))),
             breeder=breeder if breeder is not None else SimpleBreeder(),
             max_workers=max_workers,
             max_generation=max_generation,
@@ -91,8 +93,6 @@ class ECkittyFactory:
            and len(loggers) == len(log_events)):
             for logger, log_event in zip(loggers, log_events):
                 algo.register(log_event, logger.log)
-        #TODO! ADD MEDIAN STATISTICS to eckitty itself
-        #TODO! Pull into dnc
         return algo
         
         
