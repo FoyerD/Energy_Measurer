@@ -25,7 +25,6 @@ class Plotter:
     
     def take_above(self, col, value, db_n:int=0):
         self._dbs[db_n] = self._dbs[db_n][self._dbs[db_n][col] >= value]
-        print(self._dbs[db_n])
     
     def take_below(self, col, value, db_n:int=0):
         self._dbs[db_n] = self._dbs[db_n][self._dbs[db_n][col] <= value]

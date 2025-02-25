@@ -85,7 +85,7 @@ class Measurer:
         gpu_prober.kill()
         
     def _start_prober(self, path:str):
-        return subprocess.Popen(["python", path, self._job_id])
+        return subprocess.Popen(["python", path, self._job_id, self._output_dir])
      
     def save_measures(self):
         first = True
@@ -136,6 +136,14 @@ class Measurer:
             plotter.add_marker(time=marker['time'], col=marker['col'], axes_n=1, db_n=2, marker=marker['marker'])
         
         plotter.save_fig(path=f'{self._output_dir}/dual_plot.png', title='Measure/Statistics vs time', x_labels=['generation', 'generation'], y_labels=['joules', 'fitness'])
-        
+    
+    def get_cpu_df(self):
+        return pd.read_csv(f'{self._output_dir}/cpu_measures.csv')  
+    
+    def get_gpu_df(self):
+        return pd.read_csv(f'{self._output_dir}/gpu_measures.csv')
+    
+    def get_statistics_df(self):
+        return pd.read_csv(f'{self._output_dir}/statistics.csv')
 
     

@@ -4,7 +4,7 @@ from datetime import datetime
 from time import sleep
 
 def main():
-    ouput_file = f'./code_files/energy_measurer/out_files/{str(sys.argv[1])}/gpu_measures.csv'
+    ouput_file = f'{sys.argv[2]}/gpu_measures.csv'
     sleep_time = 1
     iters_untill_dump = 5
     iters = iters_untill_dump
