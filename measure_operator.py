@@ -4,6 +4,7 @@ import sys
 import pandas as pd
 from Measurer.Measurer import Measurer
 from Measurer.Plotter import Plotter
+import Measurer.DfHelper as dfh
 
 
 def run_n_measures(n:int, operator:str, num_gens:int=100):
@@ -25,6 +26,7 @@ def run_n_measures(n:int, operator:str, num_gens:int=100):
         
         gpu_df = measurer.get_gpu_df()
         cpu_df = measurer.get_cpu_df()
+        gpu_df = dfh.add_cumsum(gpu_df, 'measure', 'measure')
         merged_df = pd.concat([gpu_df, cpu_df]).sort_values(by='time')
         # Replace GPU measure by the cumulative sum of GPU measures
         merged_df.loc[merged_df['type'] == 'GPU', 'measure'] = merged_df.loc[
@@ -84,7 +86,7 @@ def run_n_measures(n:int, operator:str, num_gens:int=100):
 
     
 def main():
-    run_n_measures(n=2, operator="dnc", num_gens=100)
+    run_n_measures(n=1, operator="dnc", num_gens=100)
 
 if __name__ == "__main__":
     job_id = str(sys.argv[1])

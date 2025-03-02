@@ -1,7 +1,49 @@
 import sys
 
 import pandas as pd
-import Plotter
+from Measurer.Plotter import Plotter
+
+def get_dual_graph(dbs, output_dir, take_above:int=0, markers:list=None):
+    new_dbs = []
+    for db in dbs:
+            new_db = db.sort_values(by='time')
+            new_db['time'] = pd.to_datetime(new_db['time'])
+            new_db['time_diff'] = (new_db['time'] - new_db['time'].min()).dt.total_seconds()
+            new_dbs.append(new_db)
+    
+    if markers is None:
+        markers = []
+    cpu_db = pd.read_csv(f'{output_dir}/cpu_measures.csv')
+    gpu_db = pd.read_csv(f'{output_dir}/gpu_measures.csv')
+    statistics_db = pd.read_csv(f'{output_dir}/statistics.csv')
+    
+    merged_db = pd.concat([gpu_db, cpu_db]).sort_values(by='time')
+    # Replace GPU measure by the cumulative sum of GPU measures
+    merged_db.loc[merged_db['type'] == 'GPU', 'measure'] = merged_db.loc[
+        merged_db['type'] == 'GPU', 'measure'
+    ].cumsum() 
+    merged_db = merged_db.bfill().ffill() #filling empty gen entries of GPU
+    # Split the merged_db into two DataFrames based on 'type'
+    gpu_db_split = merged_db[merged_db['type'] == 'GPU'].reset_index(drop=True)
+    cpu_db_split = merged_db[merged_db['type'] == 'CPU'].reset_index(drop=True)
+
+    
+    
+    plotter = Plotter(x_col='gen', dbs=[cpu_db_split, gpu_db_split, statistics_db])
+    
+    #plotter.take_above(col='average', value=take_above, db_n=2)
+    #plotter.add_plot(col='average', db_n=2, axes_n=1, label='average fitness')
+    
+    plotter.take_above(col='best_of_gen', value=take_above, db_n=2)        
+    plotter.add_plot(col='best_of_gen', db_n=2, axes_n=1, label='best of gen fitness')
+    
+    plotter.add_plot(col='measure', db_n=0, axes_n=0, label='cpu joules', color='red')
+    plotter.add_groupby_max_plot(col='measure', db_n=1, axes_n=0, label='gpu joules', color='blue')
+    
+    for marker in markers:
+        plotter.add_marker(time=marker['time'], col=marker['col'], axes_n=1, db_n=2, marker=marker['marker'])
+    
+    plotter.save_fig(path=f'{output_dir}/dual_plot.png', title='Measure/Statistics vs time', x_labels=['generation', 'generation'], y_labels=['joules', 'fitness'])
 
 def main():
     csv_dir = './code_files/energy_measurer/out_files'

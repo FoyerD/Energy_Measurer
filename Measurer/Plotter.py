@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import DfHelper
 
 class Plotter:
     def __init__(self, x_col, dbs: list):
@@ -10,15 +11,8 @@ class Plotter:
         self._axes = [self._ax_left, self._ax_right]
         self._dbs = []
         
-        for db in dbs:
-            new_db = db.sort_values(by='time')
-            new_db['time'] = pd.to_datetime(new_db['time'])
-            new_db['time_diff'] = (new_db['time'] - new_db['time'].min()).dt.total_seconds()
-            self._dbs.append(new_db)
-        
     def add_marker(self, time:float, col, db_n: int=0, axes_n:int=0, marker='o'):
-        timedif_col = f'time_diff_{time/60}'
-        self._dbs[db_n][timedif_col] = (self._dbs[db_n]['time_diff'] - time).abs()
+        self._dbs[db_n], timedif_col = DfHelper.add_time_diff(self._dbs[db_n], time, col)
         marker_idx = self._dbs[db_n][timedif_col].idxmin()
         marker_row = self._dbs[db_n].loc[marker_idx]
         self._axes[axes_n].scatter(marker_row[self._x_col], marker_row[col], color='black', zorder=5, label=f'{time/60} min', marker=marker)
@@ -56,3 +50,4 @@ class Plotter:
         self._fig.legend()
         self._fig.tight_layout()
         self._fig.savefig(path, dpi=300)  # Adjust dpi for resolution
+        
