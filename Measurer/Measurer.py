@@ -15,6 +15,7 @@ from DNC_mid_train.DNC_eckity_wrapper import GAIntegerStringVectorCreator
 from DNC_mid_train import dnc_runner_eckity
 from DNC_mid_train.multiparent_wrapper import BEFORE_TRAIN_EVENT_NAME, AFTER_TRAIN_EVENT_NAME 
 from DNC_mid_train.dnc_runner_eckity import IntVectorUniformMutation
+from plot import plot_dual_graph
 
 class Measurer:
     def __init__(self, job_id:int, output_dir:str):
@@ -93,6 +94,7 @@ class Measurer:
             if(logger.num_logs() == 0):
                 continue
             logger.to_csv(self._output_dir + f'/cpu_measures.csv', append=not first)
+            logger.empty_logs()
             first = False
         
         first = True
@@ -100,42 +102,14 @@ class Measurer:
             if(logger.num_logs() == 0):
                 continue
             logger.to_csv(self._output_dir + f'/statistics.csv', append=not first)
+            logger.empty_logs()
             first = False
             
     def get_dual_graph(self, take_above:int=0, markers:list=None):
-        if markers is None:
-            markers = []
-        cpu_db = pd.read_csv(f'{self._output_dir}/cpu_measures.csv')
-        gpu_db = pd.read_csv(f'{self._output_dir}/gpu_measures.csv')
-        statistics_db = pd.read_csv(f'{self._output_dir}/statistics.csv')
-        
-        merged_db = pd.concat([gpu_db, cpu_db]).sort_values(by='time')
-        # Replace GPU measure by the cumulative sum of GPU measures
-        merged_db.loc[merged_db['type'] == 'GPU', 'measure'] = merged_db.loc[
-            merged_db['type'] == 'GPU', 'measure'
-        ].cumsum() 
-        merged_db = merged_db.bfill().ffill() #filling empty gen entries of GPU
-        # Split the merged_db into two DataFrames based on 'type'
-        gpu_db_split = merged_db[merged_db['type'] == 'GPU'].reset_index(drop=True)
-        cpu_db_split = merged_db[merged_db['type'] == 'CPU'].reset_index(drop=True)
-
-        
-        
-        plotter = Plotter(x_col='gen', dbs=[cpu_db_split, gpu_db_split, statistics_db])
-        
-        #plotter.take_above(col='average', value=take_above, db_n=2)
-        #plotter.add_plot(col='average', db_n=2, axes_n=1, label='average fitness')
-        
-        plotter.take_above(col='best_of_gen', value=take_above, db_n=2)        
-        plotter.add_plot(col='best_of_gen', db_n=2, axes_n=1, label='best of gen fitness')
-        
-        plotter.add_plot(col='measure', db_n=0, axes_n=0, label='cpu joules', color='red')
-        plotter.add_groupby_max_plot(col='measure', db_n=1, axes_n=0, label='gpu joules', color='blue')
-        
-        for marker in markers:
-            plotter.add_marker(time=marker['time'], col=marker['col'], axes_n=1, db_n=2, marker=marker['marker'])
-        
-        plotter.save_fig(path=f'{self._output_dir}/dual_plot.png', title='Measure/Statistics vs time', x_labels=['generation', 'generation'], y_labels=['joules', 'fitness'])
+        plot_dual_graph([self.get_cpu_df()],
+                            [self.get_gpu_df()],
+                            [self.get_statistics_df()],
+                            self._output_dir, take_above=take_above, markers=markers)
     
     def get_cpu_df(self):
         return pd.read_csv(f'{self._output_dir}/cpu_measures.csv')  

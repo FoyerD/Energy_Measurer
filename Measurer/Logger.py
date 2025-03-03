@@ -60,3 +60,6 @@ class Logger():
 
     def num_logs(self):
         return len(self._log_data)
+    
+    def get_df(self):
+        return pd.DataFrame(self._log_data)
