@@ -17,7 +17,7 @@ def run_n_measures(n:int, operator:str, num_gens:int=100):
         measurer = Measurer(job_id=job_id, output_dir=output_dir)
         measurers.append(measurer)
         measurer.setup_dnc(max_generation=num_gens, embedding_dim=64, db_path='./code_files/energy_measurer/datasets_dnc/hard_parsed.json')
-        measurer.start_measure(prober_path="./code_files/energy_measurer/prob_nvsmi.py")
+        measurer.start_measure(prober_path="./code_files/energy_measurer/prob_nvsmi.py", write_each=10)
         measurer.save_measures()
         measurer.get_dual_graph(take_above=0, markers=[])#[{'time':5*60, 'marker':'o', 'col':'best_of_gen'}]
     

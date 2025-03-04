@@ -39,6 +39,7 @@ def plot_dual_graph(cpu_dfs, gpu_dfs, statistics_dfs, output_dir, take_above:int
     new_statistics_dfs = [preprocess_df(df).sort_values(by='gen') for df in statistics_dfs]
     
     new_cpu_dfs, new_gpu_dfs = unzip([add_gen_to_gpu_df(dfs[0], dfs[1]) for dfs in zip(new_cpu_dfs, new_gpu_dfs)])
+    #new_cpu_dfs = [dfh.get_diff_col(df, 'measure', 'measure') for df in new_cpu_dfs]
     
     new_cpu_dfs = [dfh.max_by_group(df, 'gen', 'seconds_passed') for df in new_cpu_dfs]
     new_gpu_dfs = [dfh.max_by_group(df, 'gen', 'seconds_passed') for df in new_gpu_dfs]

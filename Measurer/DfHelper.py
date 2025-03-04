@@ -8,6 +8,11 @@ def add_seconds_passed(df: pd.DataFrame, col: str='time'):
     df['seconds_passed'] = (df[col] - df[col].min()).dt.total_seconds()
     return df
 
+def get_diff_col(df: pd.DataFrame, col: str, new_col:str):
+    df[new_col] = (df[col] - df[col].min())
+    return df
+    
+
 def add_time_diff(df: pd.DataFrame, time: float, col: str='seconds_passed'):
     timedif_col = f'time_diff_{time/60}'
     df[timedif_col] = (df[col] - time).abs()

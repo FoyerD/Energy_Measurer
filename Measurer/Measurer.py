@@ -79,14 +79,15 @@ class Measurer:
             logger.add_gen_col(self._evo_algo)
     
     
-    def start_measure(self, prober_path:str):
-        gpu_prober = self._start_prober(path=prober_path)
+    def start_measure(self, prober_path:str, write_each:int=1):
+        gpu_prober = self._start_prober(path=prober_path, write_each=write_each)
+        self._cpu_loggers[0].add_log()
         self._evo_algo.evolve()
         self._evo_algo.execute()
         gpu_prober.kill()
         
-    def _start_prober(self, path:str):
-        return subprocess.Popen(["python", path, self._job_id, self._output_dir])
+    def _start_prober(self, path:str, write_each:int=1):
+        return subprocess.Popen(["python", path, self._job_id, self._output_dir, write_each])
      
     def save_measures(self):
         first = True

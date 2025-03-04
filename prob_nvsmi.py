@@ -6,7 +6,7 @@ from time import sleep
 def main():
     ouput_file = f'{sys.argv[2]}/gpu_measures.csv'
     sleep_time = 1
-    iters_untill_dump = 5
+    iters_untill_dump = sys.argv[3]
     iters = iters_untill_dump
     append = False
     logger = Logger()
