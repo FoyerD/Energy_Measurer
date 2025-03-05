@@ -4,7 +4,7 @@ def convert_to_datetime(df: pd.DataFrame, col: str):
     df[col] = pd.to_datetime(df[col])
     return df
 
-def add_seconds_passed(df: pd.DataFrame, col: str='time'):
+def add_seconds_passed(df: pd.DataFrame, col: str='time', new_col:str='seconds_passed'):
     df['seconds_passed'] = (df[col] - df[col].min()).dt.total_seconds()
     return df
 
@@ -23,15 +23,10 @@ def add_cumsum(df: pd.DataFrame, col: str, new_col: str):
     return df
 
 def max_by_group(df: pd.DataFrame, group_col: str, col: str):
-    max_df = df.groupby(group_col)[col].max().reset_index()
-    
-    final_df = pd.merge(df.drop(columns=[col]), max_df[[group_col, col]], on=group_col, how='right')
-    final_df.columns = final_df.columns.str.replace('_x', '', regex=False).str.replace('_y', '', regex=False)
-    return final_df
+    return df.loc[df.groupby(group_col)[col].idxmax()]
 
 def mean_by_group(df: pd.DataFrame, group_col: str, col:str):
     mean_df = df.groupby(group_col)[col].mean().reset_index()
-    
     final_df = pd.merge(df.drop(columns=[col]), mean_df[[group_col, col]], on=group_col, how='right')
     final_df.columns = final_df.columns.str.replace('_x', '', regex=False).str.replace('_y', '', regex=False)
     return final_df
