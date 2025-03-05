@@ -1,4 +1,5 @@
 from os import walk
+import os
 from sys import argv
 
 import pandas as pd
@@ -33,7 +34,8 @@ def add_gen_to_gpu_df(gpu_df, cpu_df):
 def plot_dual_graph(cpu_dfs, gpu_dfs, statistics_dfs, output_dir, take_above:int=0, markers:list=None):
     if markers is None:
         markers = []
-
+    if gpu_dfs is None:
+        gpu_dfs = []
     new_cpu_dfs = [preprocess_df(df).sort_values(by='gen') for df in cpu_dfs]
     new_gpu_dfs = [dfh.add_cumsum(preprocess_df(df),col='measure', new_col='measure') for df in gpu_dfs]
     new_statistics_dfs = [preprocess_df(df).sort_values(by='gen') for df in statistics_dfs]
@@ -60,8 +62,8 @@ def plot_dual_graph(cpu_dfs, gpu_dfs, statistics_dfs, output_dir, take_above:int
     plotter.take_above(col='best_of_gen', value=take_above, db_n=2)        
     plotter.add_plot(col='best_of_gen', db_n=2, axes_n=1, label='best of gen fitness', color='green')
     
-    #plotter.add_std_dev(col='measure', db_n=0, axes_n=0, color='red')
-    #plotter.add_std_dev(col='measure', db_n=1, axes_n=0, color='blue')
+    plotter.add_std_dev(col='measure', db_n=0, axes_n=0, color='red')
+    plotter.add_std_dev(col='measure', db_n=1, axes_n=0, color='blue')
     #plotter.add_std_dev(col='best_of_gen', db_n=2, axes_n=1, color='green')
     
     for marker in markers:
@@ -78,16 +80,17 @@ def read_dfs(output_dir):
         for name in dirs:
             curr_run_dir = f'{root}/{name}'
             cpu_df = pd.read_csv(f'{curr_run_dir}/cpu_measures.csv')
-            gpu_df = pd.read_csv(f'{curr_run_dir}/gpu_measures.csv')
-            statistics_df = pd.read_csv(f'{curr_run_dir}/statistics.csv')
             cpu_dfs.append(cpu_df)
-            gpu_dfs.append(gpu_df)
+            statistics_df = pd.read_csv(f'{curr_run_dir}/statistics.csv')
             statistics_dfs.append(statistics_df)
+            if os.path.exists(f'{curr_run_dir}/gpu_measures.csv'):
+                gpu_df = pd.read_csv(f'{curr_run_dir}/gpu_measures.csv')
+                gpu_dfs.append(gpu_df)
     
     return cpu_dfs, gpu_dfs, statistics_dfs
 
 
-def main(output_dir):
+def main(output_dir, job_id):
     cpu_dfs, gpu_dfs, statistics_dfs = read_dfs(output_dir)
     plot_dual_graph(cpu_dfs, gpu_dfs, statistics_dfs, output_dir)
     print(f'Finished plotting {job_id}, found at {output_dir}')
@@ -96,4 +99,4 @@ def main(output_dir):
 
 if __name__ == "__main__":
     job_id = str(argv[1])
-    main(f'./code_files/energy_measurer/out_files/{job_id}')
+    main(f'./code_files/energy_measurer/out_files/{job_id}', str(argv[1]))

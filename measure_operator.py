@@ -16,17 +16,23 @@ def run_n_measures(n:int, operator:str, num_gens:int=100):
         os.makedirs(output_dir, exist_ok=True)
         measurer = Measurer(job_id=job_id, output_dir=output_dir)
         measurers.append(measurer)
-        measurer.setup_dnc(max_generation=num_gens, embedding_dim=64, db_path='./code_files/energy_measurer/datasets_dnc/hard_parsed.json')
-        measurer.start_measure(prober_path="./code_files/energy_measurer/prob_nvsmi.py", write_each=10)
+        if(operator == 'dnc'):
+            measurer.setup_dnc(max_generation=num_gens, embedding_dim=64, db_path='./code_files/energy_measurer/datasets_dnc/hard_parsed.json')
+        elif(operator == 'k_point'):
+            measurer.setup_k_point_crossover(max_generation=num_gens, db_path='./code_files/energy_measurer/datasets_dnc/hard_parsed.json')
+        else:
+            raise ValueError(f'Operator {operator} not recognized')
+        measurer.start_measure(prober_path="./code_files/energy_measurer/prob_nvsmi.py", write_each=5)
         measurer.save_measures()
         measurer.get_dual_graph(take_above=0, markers=[])#[{'time':5*60, 'marker':'o', 'col':'best_of_gen'}]
     
-    plot_dual_graph(parent_output_dir)
+    plot_dual_graph(parent_output_dir, job_id)
 
     
 def main():
-    run_n_measures(n=1, operator="dnc", num_gens=100)
+    run_n_measures(n=5, operator=operator, num_gens=6000)
 
 if __name__ == "__main__":
     job_id = str(sys.argv[1])
+    operator = str(sys.argv[2])
     main()
