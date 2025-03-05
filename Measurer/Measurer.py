@@ -17,6 +17,7 @@ from DNC_mid_train.multiparent_wrapper import BEFORE_TRAIN_EVENT_NAME, AFTER_TRA
 from DNC_mid_train.dnc_runner_eckity import IntVectorUniformMutation
 from plot import plot_dual_graph
 
+
 class Measurer:
     def __init__(self, job_id:int, output_dir:str):
         self._job_id = job_id
@@ -39,13 +40,7 @@ class Measurer:
         logger_after_train.add_cpu_measure_col(self._job_id)
         self._cpu_loggers.append(logger_after_train)
         
-        dnc_op, dataset = self._eckitty_factory.create_dnc_op(population_size=population_size, embedding_dim=embedding_dim, loggers=[logger_before_train, logger_after_train], log_events=[BEFORE_TRAIN_EVENT_NAME, AFTER_TRAIN_EVENT_NAME], db_path=db_path)
-        dataset_item_weights = np.array(dataset['items'])
-        dataset_bin_capacity = dataset['max_bin_weight']
-        dataset_n_items = len(dataset_item_weights)
-        ind_length = dataset_n_items
-        min_bound, max_bound = 0, dataset_n_items - 1
-        
+        dnc_op, individual_creator, bpp_eval = self._eckitty_factory.create_dnc_op(population_size=population_size, embedding_dim=embedding_dim, loggers=[logger_before_train, logger_after_train], log_events=[BEFORE_TRAIN_EVENT_NAME, AFTER_TRAIN_EVENT_NAME], db_path=db_path)        
         
         logger_after_generation = Logger()
         logger_after_generation.add_time_col()
@@ -57,9 +52,7 @@ class Measurer:
         self._statistics_loggers.append(logger_statistics)
         
         higher_is_better = True
-        individual_creator = GAIntegerStringVectorCreator(length=ind_length, bounds=(min_bound, max_bound))
-        bpp_eval = dnc_runner_eckity.BinPackingEvaluator(n_items=dataset_n_items, item_weights=dataset_item_weights,
-                                   bin_capacity=dataset_bin_capacity, fitness_dict={})
+        
         selection = TournamentSelection(tournament_size=5, higher_is_better=higher_is_better)
         mutation = IntVectorUniformMutation(probability=0.5, probability_for_each=0.1)
         
@@ -78,16 +71,58 @@ class Measurer:
         for logger in self._cpu_loggers + self._statistics_loggers:
             logger.add_gen_col(self._evo_algo)
     
+    def setup_k_point_crossover(self, db_path:str, max_generation:int=100, population_size:int=100, **kwargs):
+        probability = kwargs.get('probability', 0.5) 
+        arity = kwargs.get('arity', 2)
+        k = kwargs.get('k', 1)
+        cross_op = self._eckitty_factory.create_k_point_crossover(probability=probability, arity=arity, k=k)
+        
+        logger_after_generation = Logger()
+        logger_after_generation.add_time_col()
+        logger_after_generation.add_cpu_measure_col(self._job_id)
+        self._cpu_loggers.append(logger_after_generation)
+
+        logger_statistics = Logger()
+        logger_statistics.add_time_col()
+        self._statistics_loggers.append(logger_statistics)
+        
+        dataset_name = 'BPP_14'
+        dataset_item_weights, dataset_bin_capacity, dataset_n_items = self._eckitty_factory.get_bpp_info(db_path, dataset_name)
+        ind_length = dataset_n_items
+        min_bound, max_bound = 0, dataset_n_items - 1
+        fitness_dict = {}
+        higher_is_better = True
+        
+        individual_creator = GAIntegerStringVectorCreator(length=ind_length, bounds=(min_bound, max_bound))
+        bpp_eval = dnc_runner_eckity.BinPackingEvaluator(n_items=dataset_n_items, item_weights=dataset_item_weights,
+                                    bin_capacity=dataset_bin_capacity, fitness_dict=fitness_dict)
+        selection = TournamentSelection(tournament_size=5, higher_is_better=higher_is_better)
+        mutation = IntVectorUniformMutation(probability=0.5, probability_for_each=0.1)
+        
+        self._evo_algo = self._eckitty_factory.create_simple_evo(population_size=population_size,
+                                                           max_generation=max_generation,
+                                                           individual_creator=individual_creator,
+                                                           evaluator=bpp_eval,
+                                                           selection_methods=[selection],
+                                                           higher_is_better=higher_is_better,
+                                                           operators_sequence=[cross_op, mutation],
+                                                           loggers=[logger_after_generation, logger_statistics],
+                                                           log_events=[AFTER_GENERATION_EVENT_NAME, AFTER_GENERATION_EVENT_NAME])
+        logger_statistics.add_best_of_gen_col(self._evo_algo)
+        logger_statistics.add_average_col(self._evo_algo)
+        
+        for logger in self._cpu_loggers + self._statistics_loggers:
+            logger.add_gen_col(self._evo_algo)
     
     def start_measure(self, prober_path:str, write_each:int=1):
         gpu_prober = self._start_prober(path=prober_path, write_each=write_each)
-        self._cpu_loggers[0].add_log()
+        self._cpu_loggers[0].log()
         self._evo_algo.evolve()
         self._evo_algo.execute()
         gpu_prober.kill()
         
     def _start_prober(self, path:str, write_each:int=1):
-        return subprocess.Popen(["python", path, self._job_id, self._output_dir, write_each])
+        return subprocess.Popen(["python", path, self._job_id, self._output_dir, str(write_each)])
      
     def save_measures(self):
         first = True
@@ -121,4 +156,3 @@ class Measurer:
     def get_statistics_df(self):
         return pd.read_csv(f'{self._output_dir}/statistics.csv')
 
-    

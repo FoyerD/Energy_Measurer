@@ -31,10 +31,11 @@ class Plotter:
         grouped.plot(kind='line', ax=self._axes[axes_n], label=label if label is not None else col, color=color)
     
     def add_std_dev(self, col:str, db_n:int=0, axes_n:int=0, color=None):
+        print('adding std')
         dev = dfh.calculate_grouped_std(self._dbs[db_n], col, self._x_col)
         x = self._dbs[db_n][self._x_col]
         y = self._dbs[db_n][col]
-        self._axes[axes_n].fill_between(x, y - dev, y + dev, color=color, alpha=0.2)
+        self._axes[axes_n].fill_between(x, y - dev, y + dev, color=color, alpha=0.5)
     
     def save_fig(self, path:str, title:str, x_labels:str, y_labels:str):
         for i, labels in enumerate(zip(x_labels, y_labels)):

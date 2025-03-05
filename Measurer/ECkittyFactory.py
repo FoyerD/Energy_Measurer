@@ -7,6 +7,7 @@ from DNC_mid_train import dnc_runner_eckity
 from eckity.creators import Creator
 from eckity.evaluators import IndividualEvaluator
 from eckity.breeders import Breeder, SimpleBreeder
+from eckity.genetic_operators.crossovers.vector_k_point_crossover import VectorKPointsCrossover
 from eckity.statistics import Statistics, BestAverageWorstStatistics
 from torch.cuda import is_available
 
@@ -14,6 +15,13 @@ from torch.cuda import is_available
 class ECkittyFactory:
     def __init__(self, job_id: int):
         self._job_id = str(job_id)
+    
+    def get_bpp_info(self, db_path:str, dataset_name:str):
+        datasets_json = json.load(open(db_path, 'r'))
+        dataset_item_weights = np.array(datasets_json[dataset_name]['items'])
+        dataset_bin_capacity = datasets_json[dataset_name]['max_bin_weight']
+        dataset_n_items = len(dataset_item_weights)
+        return dataset_item_weights, dataset_bin_capacity, dataset_n_items
     
     def create_dnc_op(self,
                       db_path:str,
@@ -28,12 +36,8 @@ class ECkittyFactory:
                       loggers: list = None,
                       log_events:list = None):
         fitness_dict = {}
-        datasets_json = json.load(open(db_path, 'r'))
         dataset_name = 'BPP_14'
-        dataset_item_weights = np.array(datasets_json[dataset_name]['items'])
-        dataset_bin_capacity = datasets_json[dataset_name]['max_bin_weight']
-        dataset_n_items = len(dataset_item_weights)
-
+        dataset_item_weights, dataset_bin_capacity, dataset_n_items = self.get_bpp_info(db_path, dataset_name)
         ind_length = dataset_n_items
         min_bound, max_bound = 0, dataset_n_items - 1
 
@@ -61,8 +65,24 @@ class ECkittyFactory:
             for logger, log_event in zip(loggers, log_events):
                 dnc_op.dnc_wrapper.register(log_event, logger.log)
         
-        return dnc_op, datasets_json[dataset_name]
-                
+        return dnc_op, individual_creator, bpp_eval
+    
+    def create_k_point_crossover(self,
+                                probability:int=1, 
+                                arity:int=2, 
+                                k:int=1, 
+                                events=None, 
+                                loggers: list = None,
+                                log_events:list = None):
+        
+        op = VectorKPointsCrossover(probability=probability, k=k, arity=arity, events=events)
+        
+        if(loggers is not None and log_events is not None
+           and len(loggers) == len(log_events)):
+            for logger, log_event in zip(loggers, log_events):
+                op.register(log_event, logger.log)
+        return op
+    
     def create_simple_evo(self,
                           individual_creator:Creator,
                           evaluator: IndividualEvaluator,
