@@ -26,10 +26,8 @@ def max_by_group(df: pd.DataFrame, group_col: str, col: str):
     return df.loc[df.groupby(group_col)[col].idxmax()]
 
 def mean_by_group(df: pd.DataFrame, group_col: str, col:str):
-    mean_df = df.groupby(group_col)[col].mean().reset_index()
-    final_df = pd.merge(df.drop(columns=[col]), mean_df[[group_col, col]], on=group_col, how='right')
-    final_df.columns = final_df.columns.str.replace('_x', '', regex=False).str.replace('_y', '', regex=False)
-    return final_df
+    mean_df = df.groupby(group_col).mean().reset_index()
+    return mean_df
 
     
 def calculate_grouped_std(df, value_column, group_column):
@@ -44,4 +42,6 @@ def calculate_grouped_std(df, value_column, group_column):
     Returns:
         pd.Series: Standard deviation of value_column for each group
     """
-    return df.groupby(group_column)[value_column].std()
+    stds = df.groupby(group_column)[value_column].std().reset_index().fillna(0)
+    stds.columns = [group_column, f'{value_column}_std']
+    return stds
