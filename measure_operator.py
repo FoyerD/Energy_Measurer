@@ -5,21 +5,21 @@ import argparse
 from Measurer.Measurer import Measurer
 from plot import main as plot_dual_graph
 
-def run_n_measures(job_id:str, c_op:str, m_op:str, domain:str, n_runs=1, n_gens=100):
+def run_n_measures(job_id:str, cross_op:str, mutation_op:str, domain:str, n_runs:int=1, n_gens:int=100):
     measurers = []
     parent_output_dir = f"./code_files/energy_measurer/out_files/{job_id}"
     
-    for i in range(n):
+    for i in range(n_runs):
         output_dir = f"{parent_output_dir}/{i}"
         os.makedirs(output_dir, exist_ok=True)
         measurer = Measurer(job_id=job_id, output_dir=output_dir)
         measurers.append(measurer)
-        if(c_op == 'dnc'):
+        if(cross_op == 'dnc'):
             measurer.setup_dnc(max_generation=n_gens, embedding_dim=64, db_path='./code_files/energy_measurer/datasets_dnc/hard_parsed.json')
-        elif(c_op == 'k_point'):
+        elif(cross_op == 'k_point'):
             measurer.setup_k_point_crossover(max_generation=n_gens, db_path='./code_files/energy_measurer/datasets_dnc/hard_parsed.json')
         else:
-            raise ValueError(f'Operator {c_op} not recognized')
+            raise ValueError(f'Operator {cross_op} not recognized')
         measurer.start_measure(prober_path="./code_files/energy_measurer/prob_nvsmi.py", write_each=5)
         measurer.save_measures()
         measurer.get_dual_graph(take_above=0, markers=[])#[{'time':5*60, 'marker':'o', 'col':'best_of_gen'}]
@@ -27,8 +27,8 @@ def run_n_measures(job_id:str, c_op:str, m_op:str, domain:str, n_runs=1, n_gens=
     plot_dual_graph(parent_output_dir, job_id)
 
     
-def main(job_id:str, c_op:str, m_op:str, domain:str, n_runs=1, n_gens=100):
-    run_n_measures(n_runs=n_runs, operator=c_op, num_gens=n_gens, job_id=job_id)
+def main(job_id:str, cross_op:str, mutation_op:str, domain:str, n_runs:int=1, n_gens:int=100):
+    run_n_measures(n_runs=n_runs, cross_op=cross_op, mutation_op=mutation_op, domain=domain, n_gens=n_gens, job_id=job_id)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -47,9 +47,9 @@ if __name__ == "__main__":
     
     
     args = parser.parse_args()
-    main(job_id=args.job_id, 
-         c_op=args.crossover_op,
-         m_op=args.mutation_op,
+    main(job_id=str(args.job_id), 
+         cross_op=args.crossover_op,
+         mutation_op=args.mutation_op,
          domain=args.domain, 
          n_runs=args.n_runs, 
          n_gens=args.n_gens)
