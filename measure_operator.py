@@ -15,6 +15,13 @@ def run_n_measures(job_id:str, cross_op:str, mutation_op:str, domain:str, n_runs
         measurer = Measurer(job_id=job_id, output_dir=output_dir)
         measurers.append(measurer)
         
+        # evaluator
+        if(domain == 'bpp'):
+            measurer.setup_bpp_evaluator(db_path='./code_files/energy_measurer/datasets_dnc/hard_parsed.json', dataset_name='BPP_14')
+        else:
+            raise ValueError(f'Domain {domain} not recognized')
+        
+        # crossover operator
         if(cross_op == 'dnc'):
             measurer.setup_dnc(embedding_dim=64, db_path='./code_files/energy_measurer/datasets_dnc/hard_parsed.json')
         elif(cross_op == 'k_point'):
@@ -22,6 +29,7 @@ def run_n_measures(job_id:str, cross_op:str, mutation_op:str, domain:str, n_runs
         else:
             raise ValueError(f'Operator {cross_op} not recognized')
         
+        # mutation operator
         if(mutation_op == 'uniform'):
             measurer.setup_uniform_mutation()
         else:

@@ -23,8 +23,20 @@ class ECkittyFactory:
         dataset_n_items = len(dataset_item_weights)
         return dataset_item_weights, dataset_bin_capacity, dataset_n_items
     
+    
+    def make_bpp_evaluator(self, db_path:str, dataset_name:str):
+        fitness_dict = {}
+        dataset_name = 'BPP_14'
+        dataset_item_weights, dataset_bin_capacity, dataset_n_items = self.get_bpp_info(db_path, dataset_name)
+        ind_length = dataset_n_items
+        min_bound, max_bound = 0, dataset_n_items - 1
+
+        bpp_eval = dnc_runner_eckity.BinPackingEvaluator(n_items=dataset_n_items, item_weights=dataset_item_weights,
+                                    bin_capacity=dataset_bin_capacity, fitness_dict=fitness_dict)
+        
+        return bpp_eval, ind_length, min_bound, max_bound
+    
     def create_dnc_op(self,
-                      db_path:str,
                       individual_creator:Creator,
                       evaluator: IndividualEvaluator,
                       ind_length:int,
@@ -38,15 +50,6 @@ class ECkittyFactory:
                       events = None,
                       loggers: list = None,
                       log_events:list = None):
-        #fitness_dict = {}
-        #dataset_name = 'BPP_14'
-        #dataset_item_weights, dataset_bin_capacity, dataset_n_items = self.get_bpp_info(db_path, dataset_name)
-        #ind_length = dataset_n_items
-        #min_bound, max_bound = 0, dataset_n_items - 1
-
-        #individual_creator = GAIntegerStringVectorCreator(length=ind_length, bounds=(min_bound, max_bound))
-        #bpp_eval = dnc_runner_eckity.BinPackingEvaluator(n_items=dataset_n_items, item_weights=dataset_item_weights,
-                                    #bin_capacity=dataset_bin_capacity, fitness_dict=fitness_dict)
 
         dnc_config = DeepNeuralCrossoverConfig(
             embedding_dim=embedding_dim,

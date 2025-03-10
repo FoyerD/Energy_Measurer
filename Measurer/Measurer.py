@@ -29,6 +29,7 @@ class Measurer:
         self._output_dir = output_dir
         self._crossover_op = None
         self._mutation_op = None
+        self._evaliator = None
         
         
     def setup_dnc(self, db_path:str, embedding_dim:int=64, population_size:int=100):
@@ -44,7 +45,10 @@ class Measurer:
         
         self._crossover_op = self._eckitty_factory.create_dnc_op(population_size=population_size, embedding_dim=embedding_dim, loggers=[logger_before_train, logger_after_train], log_events=[BEFORE_TRAIN_EVENT_NAME, AFTER_TRAIN_EVENT_NAME], db_path=db_path)        
         return self._crossover_op
-        
+    
+    def setup_bpp_evaluator(self, db_path:str, dataset_name:str):
+        self._evaluator, ind_length, min_bound, max_bound = self._eckitty_factory.make_bpp_evaluator(db_path=db_path, dataset_name=dataset_name)
+        return self._evaluator, ind_length, min_bound, max_bound
     
     def setup_k_point_crossover(self, probability:float=0.5, arity:int=2, k:int=1):
         self._crossover_op = self._eckitty_factory.create_k_point_crossover(probability=probability, arity=arity, k=k)
@@ -54,7 +58,7 @@ class Measurer:
         self._mutation_op = self._eckitty_factory.create_uniform_mutation(probability=probability, arity=arity, probability_for_each=probability_for_each)
         return self._mutation_op
     
-    def create_simple_evo(self, population_size:int, max_generation:int, db_path:str, higher_is_better:bool=True):
+    def create_simple_evo(self, population_size:int, max_generation:int, ind_length:int, min_bound:int, max_bound:int, higher_is_better:bool=True):
         assert self._crossover_op is not None, 'Crossover operator must be set'
         assert self._mutation_op is not None, 'Mutation operator must be set'
         
@@ -67,21 +71,14 @@ class Measurer:
         logger_statistics.add_time_col()
         self._statistics_loggers.append(logger_statistics)
         
-        dataset_name = 'BPP_14'
-        dataset_item_weights, dataset_bin_capacity, dataset_n_items = self._eckitty_factory.get_bpp_info(db_path, dataset_name)
-        ind_length = dataset_n_items
-        min_bound, max_bound = 0, dataset_n_items - 1
-        fitness_dict = {}
         
-        bpp_eval = dnc_runner_eckity.BinPackingEvaluator(n_items=ind_length, item_weights=dataset_item_weights,
-                                    bin_capacity=dataset_bin_capacity, fitness_dict=fitness_dict)
         individual_creator = GAIntegerStringVectorCreator(length=ind_length, bounds=(min_bound, max_bound))
         selection = TournamentSelection(tournament_size=5, higher_is_better=higher_is_better)
         
         self._evo_algo = self._eckitty_factory.create_simple_evo(population_size=population_size,
                                                            max_generation=max_generation,
                                                            individual_creator=individual_creator,
-                                                           evaluator=bpp_eval,
+                                                           evaluator=self._evaluator,
                                                            selection_methods=[selection],
                                                            higher_is_better=higher_is_better,
                                                            operators_sequence=[self._crossover_op, self._mutation_op],
