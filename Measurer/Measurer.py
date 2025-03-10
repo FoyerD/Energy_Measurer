@@ -10,6 +10,7 @@ from eckity.algorithms.simple_evolution import AFTER_GENERATION_EVENT_NAME
 import subprocess
 import pandas as pd
 from eckity.genetic_operators.selections.tournament_selection import TournamentSelection
+from eckity.creators.creator import Creator
 import numpy as np
 from DNC_mid_train.DNC_eckity_wrapper import GAIntegerStringVectorCreator
 from DNC_mid_train import dnc_runner_eckity
@@ -26,10 +27,11 @@ class Measurer:
         self._statistics_loggers = []
         self._evo_algo = None
         self._output_dir = output_dir
+        self._crossover_op = None
+        self._mutation_op = None
         
         
-        
-    def setup_dnc(self, db_path:str, max_generation:int=100, embedding_dim:int=64, population_size:int=100):
+    def setup_dnc(self, db_path:str, embedding_dim:int=64, population_size:int=100):
         logger_before_train = Logger()
         logger_before_train.add_time_col()
         logger_before_train.add_cpu_measure_col(self._job_id)
@@ -40,42 +42,21 @@ class Measurer:
         logger_after_train.add_cpu_measure_col(self._job_id)
         self._cpu_loggers.append(logger_after_train)
         
-        dnc_op, individual_creator, bpp_eval = self._eckitty_factory.create_dnc_op(population_size=population_size, embedding_dim=embedding_dim, loggers=[logger_before_train, logger_after_train], log_events=[BEFORE_TRAIN_EVENT_NAME, AFTER_TRAIN_EVENT_NAME], db_path=db_path)        
+        self._crossover_op = self._eckitty_factory.create_dnc_op(population_size=population_size, embedding_dim=embedding_dim, loggers=[logger_before_train, logger_after_train], log_events=[BEFORE_TRAIN_EVENT_NAME, AFTER_TRAIN_EVENT_NAME], db_path=db_path)        
+        return self._crossover_op
         
-        logger_after_generation = Logger()
-        logger_after_generation.add_time_col()
-        logger_after_generation.add_cpu_measure_col(self._job_id)
-        self._cpu_loggers.append(logger_after_generation)
-
-        logger_statistics = Logger()
-        logger_statistics.add_time_col()
-        self._statistics_loggers.append(logger_statistics)
-        
-        higher_is_better = True
-        
-        selection = TournamentSelection(tournament_size=5, higher_is_better=higher_is_better)
-        mutation = IntVectorUniformMutation(probability=0.5, probability_for_each=0.1)
-        
-        self._evo_algo = self._eckitty_factory.create_simple_evo(population_size=population_size,
-                                                           max_generation=max_generation,
-                                                           individual_creator=individual_creator,
-                                                           evaluator=bpp_eval,
-                                                           selection_methods=[selection],
-                                                           higher_is_better=higher_is_better,
-                                                           operators_sequence=[dnc_op, mutation],
-                                                           loggers=[logger_after_generation, logger_statistics],
-                                                           log_events=[AFTER_GENERATION_EVENT_NAME, AFTER_GENERATION_EVENT_NAME])
-        logger_statistics.add_best_of_gen_col(self._evo_algo)
-        logger_statistics.add_average_col(self._evo_algo)
-        
-        for logger in self._cpu_loggers + self._statistics_loggers:
-            logger.add_gen_col(self._evo_algo)
     
-    def setup_k_point_crossover(self, db_path:str, max_generation:int=100, population_size:int=100, **kwargs):
-        probability = kwargs.get('probability', 0.5) 
-        arity = kwargs.get('arity', 2)
-        k = kwargs.get('k', 1)
-        cross_op = self._eckitty_factory.create_k_point_crossover(probability=probability, arity=arity, k=k)
+    def setup_k_point_crossover(self, probability:float=0.5, arity:int=2, k:int=1):
+        self._crossover_op = self._eckitty_factory.create_k_point_crossover(probability=probability, arity=arity, k=k)
+        return self._crossover_op
+        
+    def setup_uniform_mutation(self, probability:float=0.5, arity:int=1, probability_for_each:float=0.1):
+        self._mutation_op = self._eckitty_factory.create_uniform_mutation(probability=probability, arity=arity, probability_for_each=probability_for_each)
+        return self._mutation_op
+    
+    def create_simple_evo(self, population_size:int, max_generation:int, db_path:str, higher_is_better:bool=True):
+        assert self._crossover_op is not None, 'Crossover operator must be set'
+        assert self._mutation_op is not None, 'Mutation operator must be set'
         
         logger_after_generation = Logger()
         logger_after_generation.add_time_col()
@@ -91,13 +72,11 @@ class Measurer:
         ind_length = dataset_n_items
         min_bound, max_bound = 0, dataset_n_items - 1
         fitness_dict = {}
-        higher_is_better = True
         
-        individual_creator = GAIntegerStringVectorCreator(length=ind_length, bounds=(min_bound, max_bound))
-        bpp_eval = dnc_runner_eckity.BinPackingEvaluator(n_items=dataset_n_items, item_weights=dataset_item_weights,
+        bpp_eval = dnc_runner_eckity.BinPackingEvaluator(n_items=ind_length, item_weights=dataset_item_weights,
                                     bin_capacity=dataset_bin_capacity, fitness_dict=fitness_dict)
+        individual_creator = GAIntegerStringVectorCreator(length=ind_length, bounds=(min_bound, max_bound))
         selection = TournamentSelection(tournament_size=5, higher_is_better=higher_is_better)
-        mutation = IntVectorUniformMutation(probability=0.5, probability_for_each=0.1)
         
         self._evo_algo = self._eckitty_factory.create_simple_evo(population_size=population_size,
                                                            max_generation=max_generation,
@@ -105,7 +84,7 @@ class Measurer:
                                                            evaluator=bpp_eval,
                                                            selection_methods=[selection],
                                                            higher_is_better=higher_is_better,
-                                                           operators_sequence=[cross_op, mutation],
+                                                           operators_sequence=[self._crossover_op, self._mutation_op],
                                                            loggers=[logger_after_generation, logger_statistics],
                                                            log_events=[AFTER_GENERATION_EVENT_NAME, AFTER_GENERATION_EVENT_NAME])
         logger_statistics.add_best_of_gen_col(self._evo_algo)

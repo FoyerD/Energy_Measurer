@@ -14,12 +14,20 @@ def run_n_measures(job_id:str, cross_op:str, mutation_op:str, domain:str, n_runs
         os.makedirs(output_dir, exist_ok=True)
         measurer = Measurer(job_id=job_id, output_dir=output_dir)
         measurers.append(measurer)
+        
         if(cross_op == 'dnc'):
-            measurer.setup_dnc(max_generation=n_gens, embedding_dim=64, db_path='./code_files/energy_measurer/datasets_dnc/hard_parsed.json')
+            measurer.setup_dnc(embedding_dim=64, db_path='./code_files/energy_measurer/datasets_dnc/hard_parsed.json')
         elif(cross_op == 'k_point'):
-            measurer.setup_k_point_crossover(max_generation=n_gens, db_path='./code_files/energy_measurer/datasets_dnc/hard_parsed.json')
+            measurer.setup_k_point_crossover()
         else:
             raise ValueError(f'Operator {cross_op} not recognized')
+        
+        if(mutation_op == 'uniform'):
+            measurer.setup_uniform_mutation()
+        else:
+            raise ValueError(f'Operator {mutation_op} not recognized')
+        
+        measurer.create_simple_evo(population_size=100, max_generation=n_gens, db_path='./code_files/energy_measurer/datasets_dnc/hard_parsed.json')
         measurer.start_measure(prober_path="./code_files/energy_measurer/prob_nvsmi.py", write_each=5)
         measurer.save_measures()
         measurer.get_dual_graph(take_above=0, markers=[])#[{'time':5*60, 'marker':'o', 'col':'best_of_gen'}]
