@@ -11,6 +11,7 @@ import subprocess
 import pandas as pd
 from eckity.genetic_operators.selections.tournament_selection import TournamentSelection
 from eckity.creators.creator import Creator
+from eckity.evaluators.individual_evaluator import IndividualEvaluator
 import numpy as np
 from DNC_mid_train.DNC_eckity_wrapper import GAIntegerStringVectorCreator
 from DNC_mid_train import dnc_runner_eckity
@@ -30,9 +31,18 @@ class Measurer:
         self._crossover_op = None
         self._mutation_op = None
         self._evaliator = None
+        self._creator = None
+        self._individual_length = None
+        self._min_bound = None
+        self._max_bound = None
         
         
-    def setup_dnc(self, db_path:str, embedding_dim:int=64, population_size:int=100):
+    def setup_dnc(self, embedding_dim:int=64, population_size:int=100):
+        assert self._evaluator is not None, 'Evaluator must be set'
+        assert self._creator is not None, 'Creator must be set'
+        assert self._individual_length is not None, 'Individual length must be set'
+        
+        
         logger_before_train = Logger()
         logger_before_train.add_time_col()
         logger_before_train.add_cpu_measure_col(self._job_id)
@@ -43,12 +53,13 @@ class Measurer:
         logger_after_train.add_cpu_measure_col(self._job_id)
         self._cpu_loggers.append(logger_after_train)
         
-        self._crossover_op = self._eckitty_factory.create_dnc_op(population_size=population_size, embedding_dim=embedding_dim, loggers=[logger_before_train, logger_after_train], log_events=[BEFORE_TRAIN_EVENT_NAME, AFTER_TRAIN_EVENT_NAME], db_path=db_path)        
+        self._crossover_op = self._eckitty_factory.create_dnc_op(individual_creator=self._creator, evaluator=self._evaluator, individual_length=self._individual_length, population_size=population_size, embedding_dim=embedding_dim, loggers=[logger_before_train, logger_after_train], log_events=[BEFORE_TRAIN_EVENT_NAME, AFTER_TRAIN_EVENT_NAME])        
         return self._crossover_op
     
     def setup_bpp_evaluator(self, db_path:str, dataset_name:str):
-        self._evaluator, ind_length, min_bound, max_bound = self._eckitty_factory.make_bpp_evaluator(db_path=db_path, dataset_name=dataset_name)
-        return self._evaluator, ind_length, min_bound, max_bound
+        self._evaluator, self._individual_length, min_bound, max_bound = self._eckitty_factory.make_bpp_evaluator(db_path=db_path, dataset_name=dataset_name)
+        self._creator = GAIntegerStringVectorCreator(length=self._individual_length, bounds=(min_bound, max_bound))
+        return self._evaluator, self._individual_length, min_bound, max_bound
     
     def setup_k_point_crossover(self, probability:float=0.5, arity:int=2, k:int=1):
         self._crossover_op = self._eckitty_factory.create_k_point_crossover(probability=probability, arity=arity, k=k)
@@ -58,7 +69,7 @@ class Measurer:
         self._mutation_op = self._eckitty_factory.create_uniform_mutation(probability=probability, arity=arity, probability_for_each=probability_for_each)
         return self._mutation_op
     
-    def create_simple_evo(self, population_size:int, max_generation:int, ind_length:int, min_bound:int, max_bound:int, higher_is_better:bool=True):
+    def create_simple_evo(self, population_size:int, max_generation:int, higher_is_better:bool=True):
         assert self._crossover_op is not None, 'Crossover operator must be set'
         assert self._mutation_op is not None, 'Mutation operator must be set'
         
@@ -72,12 +83,11 @@ class Measurer:
         self._statistics_loggers.append(logger_statistics)
         
         
-        individual_creator = GAIntegerStringVectorCreator(length=ind_length, bounds=(min_bound, max_bound))
         selection = TournamentSelection(tournament_size=5, higher_is_better=higher_is_better)
         
         self._evo_algo = self._eckitty_factory.create_simple_evo(population_size=population_size,
                                                            max_generation=max_generation,
-                                                           individual_creator=individual_creator,
+                                                           individual_creator=self._creator,
                                                            evaluator=self._evaluator,
                                                            selection_methods=[selection],
                                                            higher_is_better=higher_is_better,

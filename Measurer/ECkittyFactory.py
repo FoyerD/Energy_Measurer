@@ -26,7 +26,6 @@ class ECkittyFactory:
     
     def make_bpp_evaluator(self, db_path:str, dataset_name:str):
         fitness_dict = {}
-        dataset_name = 'BPP_14'
         dataset_item_weights, dataset_bin_capacity, dataset_n_items = self.get_bpp_info(db_path, dataset_name)
         ind_length = dataset_n_items
         min_bound, max_bound = 0, dataset_n_items - 1
@@ -39,7 +38,7 @@ class ECkittyFactory:
     def create_dnc_op(self,
                       individual_creator:Creator,
                       evaluator: IndividualEvaluator,
-                      ind_length:int,
+                      individual_length:int,
                       embedding_dim: int = 64,
                       running_mean_decay: float = 0.95,
                       batch_size: int = 1024,
@@ -53,8 +52,8 @@ class ECkittyFactory:
 
         dnc_config = DeepNeuralCrossoverConfig(
             embedding_dim=embedding_dim,
-            sequence_length=ind_length,
-            num_embeddings=ind_length + 1,
+            sequence_length=individual_length,
+            num_embeddings=individual_length + 1,
             running_mean_decay=running_mean_decay,
             batch_size=batch_size,
             learning_rate=learning_rate,
@@ -89,9 +88,17 @@ class ECkittyFactory:
                 op.register(log_event, logger.log)
         return op
     
-    def create_uniform_mutation(probability=0.5, arity=1, events=None, probability_for_each=0.1):
-        mutation = dnc_runner_eckity.IntVectorUniformMutation(probability=probability, probability_for_each=probability_for_each, arity=arity, events=events)
-        return mutation
+    def create_uniform_mutation(self, probability:float=0.5, arity:int=1, probability_for_each:float=0.1, events=None, 
+                                loggers: list = None,
+                                log_events:list = None):
+        op = dnc_runner_eckity.IntVectorUniformMutation(probability=probability, probability_for_each=probability_for_each, arity=arity, events=events)
+
+        if(loggers is not None and log_events is not None
+           and len(loggers) == len(log_events)):
+            for logger, log_event in zip(loggers, log_events):
+                op.register(log_event, logger.log)
+
+        return op 
     
     def create_simple_evo(self,
                           individual_creator:Creator,

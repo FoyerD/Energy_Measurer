@@ -5,6 +5,27 @@ import argparse
 from Measurer.Measurer import Measurer
 from plot import main as plot_dual_graph
 
+
+def get_evaluator(measurer:Measurer, domain:str):
+    if(domain == 'bpp'):
+        return measurer.setup_bpp_evaluator(db_path='./code_files/energy_measurer/datasets_dnc/hard_parsed.json', dataset_name='BPP_14')
+    else:
+        raise ValueError(f'Domain {domain} not recognized')
+
+def get_crossover_op(measurer:Measurer, cross_op:str):
+    if(cross_op == 'dnc'):
+        return measurer.setup_dnc(embedding_dim=64)
+    elif(cross_op == 'k_point'):
+        return measurer.setup_k_point_crossover()
+    else:
+        raise ValueError(f'Operator {cross_op} not recognized')
+
+def get_mutation_op(measurer:Measurer, mutation_op:str):
+    if(mutation_op == 'uniform'):
+        return measurer.setup_uniform_mutation()
+    else:
+        raise ValueError(f'Operator {mutation_op} not recognized')
+
 def run_n_measures(job_id:str, cross_op:str, mutation_op:str, domain:str, n_runs:int=1, n_gens:int=100):
     measurers = []
     parent_output_dir = f"./code_files/energy_measurer/out_files/{job_id}"
@@ -16,26 +37,15 @@ def run_n_measures(job_id:str, cross_op:str, mutation_op:str, domain:str, n_runs
         measurers.append(measurer)
         
         # evaluator
-        if(domain == 'bpp'):
-            measurer.setup_bpp_evaluator(db_path='./code_files/energy_measurer/datasets_dnc/hard_parsed.json', dataset_name='BPP_14')
-        else:
-            raise ValueError(f'Domain {domain} not recognized')
+        get_evaluator(measurer, domain)
         
         # crossover operator
-        if(cross_op == 'dnc'):
-            measurer.setup_dnc(embedding_dim=64, db_path='./code_files/energy_measurer/datasets_dnc/hard_parsed.json')
-        elif(cross_op == 'k_point'):
-            measurer.setup_k_point_crossover()
-        else:
-            raise ValueError(f'Operator {cross_op} not recognized')
+        get_crossover_op(measurer, cross_op)
         
         # mutation operator
-        if(mutation_op == 'uniform'):
-            measurer.setup_uniform_mutation()
-        else:
-            raise ValueError(f'Operator {mutation_op} not recognized')
+        get_mutation_op(measurer, mutation_op)
         
-        measurer.create_simple_evo(population_size=100, max_generation=n_gens, db_path='./code_files/energy_measurer/datasets_dnc/hard_parsed.json')
+        measurer.create_simple_evo(population_size=100, max_generation=n_gens)
         measurer.start_measure(prober_path="./code_files/energy_measurer/prob_nvsmi.py", write_each=5)
         measurer.save_measures()
         measurer.get_dual_graph(take_above=0, markers=[])#[{'time':5*60, 'marker':'o', 'col':'best_of_gen'}]
