@@ -127,11 +127,11 @@ class Measurer:
             logger.empty_logs()
             first = False
             
-    def get_dual_graph(self, take_above:int=0, markers:list=None):
+    def get_dual_graph(self, markers:list=None):
         plot_dual_graph([self.get_cpu_df()],
                             [self.get_gpu_df()],
                             [self.get_statistics_df()],
-                            self._output_dir, take_above=take_above, markers=markers)
+                            self._output_dir, markers=markers)
     
     def get_cpu_df(self):
         return pd.read_csv(f'{self._output_dir}/cpu_measures.csv')  

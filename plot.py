@@ -2,6 +2,7 @@ from os import walk
 import os
 from sys import argv
 
+from matplotlib import pyplot as plt
 import pandas as pd
 from Measurer.Plotter import Plotter
 import Measurer.DfHelper as dfh
@@ -31,7 +32,7 @@ def add_gen_to_gpu_df(gpu_df, cpu_df):
     
     return cpu_df_split, gpu_df_split
 
-def plot_dual_graph(cpu_dfs, gpu_dfs, statistics_dfs, output_dir, take_above:int=0, markers:list=None):
+def plot_dual_graph(cpu_dfs, gpu_dfs, statistics_dfs, output_dir, markers:list=None):
     assert(len(cpu_dfs) == len(gpu_dfs) == len(statistics_dfs))
     if markers is None:
         markers = []
@@ -79,7 +80,7 @@ def plot_dual_graph(cpu_dfs, gpu_dfs, statistics_dfs, output_dir, take_above:int
         plotter.fill_between(col='best_of_gen', db_name='statistics', axes_n=1, color='green', dev=final_statistics_df['best_of_gen_std'])
     
     for marker in markers:
-        plotter.add_marker(time=marker['time'], col=marker['col'], axes_n=1, db_name='statistics', marker=marker['marker'])
+        plotter.add_marker(time=marker['time'], time_col='seconds_passed', col=marker['col'], axes_n=1, db_name='statistics', marker=marker['marker'])
     
     plotter.save_fig(
         path=f'{output_dir}/dual_plot.png',

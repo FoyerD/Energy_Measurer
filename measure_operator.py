@@ -48,7 +48,9 @@ def run_n_measures(job_id:str, cross_op:str, mutation_op:str, domain:str, n_runs
         measurer.create_simple_evo(population_size=100, max_generation=n_gens)
         measurer.start_measure(prober_path="./code_files/energy_measurer/prob_nvsmi.py", write_each=5)
         measurer.save_measures()
-        measurer.get_dual_graph(take_above=0, markers=[])#[{'time':5*60, 'marker':'o', 'col':'best_of_gen'}]
+        markers = [{'time':3*60, 'marker':'o', 'col':'best_of_gen'},
+                   {'time':20*60, 'marker':'*', 'col':'best_of_gen'}]
+        measurer.get_dual_graph(markers=markers)
     
     plot_dual_graph(parent_output_dir, job_id)
 

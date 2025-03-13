@@ -11,8 +11,8 @@ class Plotter:
         self._axes = [self._ax_left, self._ax_right]
         self._dbs_dict = dbs  # Dictionary mapping names to DataFrames
         
-    def add_marker(self, time: float, col, db_name: str, axes_n: int = 0, marker='o'):
-        self._dbs_dict[db_name], timedif_col = dfh.add_time_diff(self._dbs_dict[db_name], time, col)
+    def add_marker(self, time: float, time_col:str, col:str, db_name: str, axes_n: int = 0, marker='o'):
+        self._dbs_dict[db_name], timedif_col = dfh.add_time_diff(self._dbs_dict[db_name], time, time_col)
         marker_idx = self._dbs_dict[db_name][timedif_col].idxmin()
         marker_row = self._dbs_dict[db_name].loc[marker_idx]
         self._axes[axes_n].scatter(marker_row[self._x_col], marker_row[col], color='black', zorder=5, label=f'{time/60} min', marker=marker)
