@@ -1,5 +1,7 @@
+import datetime
 import os
 import subprocess
+from time import sleep
 import pandas as pd
 from DNC_mid_train.multiparent_wrapper import BEFORE_TRAIN_EVENT_NAME, AFTER_TRAIN_EVENT_NAME 
 from Measurer.ECkittyFactory import ECkittyFactory
@@ -109,6 +111,7 @@ class Measurer:
         
     def _start_prober(self, path:str, write_each:int=1):
         return subprocess.Popen(["python", path, self._job_id, self._output_dir, str(write_each)])
+    
      
     def save_measures(self):
         first = True
@@ -127,11 +130,11 @@ class Measurer:
             logger.empty_logs()
             first = False
             
-    def get_dual_graph(self, take_above:int=0, markers:list=None):
+    def get_dual_graph(self, markers:list=None, cpu_avg:float=0, gpu_avg:float=0):
         plot_dual_graph([self.get_cpu_df()],
                             [self.get_gpu_df()],
                             [self.get_statistics_df()],
-                            self._output_dir, take_above=take_above, markers=markers)
+                            self._output_dir, markers=markers, cpu_avg=cpu_avg, gpu_avg=gpu_avg)
     
     def get_cpu_df(self):
         return pd.read_csv(f'{self._output_dir}/cpu_measures.csv')  

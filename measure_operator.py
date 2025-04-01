@@ -1,7 +1,11 @@
-import os
-import sys
+import datetime
 
+import pandas as pd
+from Measurer.Logger import Logger
+import os
+from nothing import get_nothing_avg
 import argparse
+from time import sleep
 from Measurer.Measurer import Measurer
 from plot import main as plot_dual_graph
 
@@ -26,10 +30,10 @@ def get_mutation_op(measurer:Measurer, mutation_op:str):
     else:
         raise ValueError(f'Operator {mutation_op} not recognized')
 
-def run_n_measures(job_id:str, cross_op:str, mutation_op:str, domain:str, n_runs:int=1, n_gens:int=100):
+def run_n_measures(job_id:str, cross_op:str, mutation_op:str, domain:str, n_runs:int=1, n_gens:int=100, sleep_time:int=0):
     measurers = []
     parent_output_dir = f"./code_files/energy_measurer/out_files/{job_id}"
-    
+    cpu_avg, gpu_avg = get_nothing_avg(job_id, parent_output_dir, total_time=60 * 60)
     for i in range(n_runs):
         output_dir = f"{parent_output_dir}/{i}"
         os.makedirs(output_dir, exist_ok=True)
@@ -46,15 +50,20 @@ def run_n_measures(job_id:str, cross_op:str, mutation_op:str, domain:str, n_runs
         get_mutation_op(measurer, mutation_op)
         
         measurer.create_simple_evo(population_size=100, max_generation=n_gens)
+
         measurer.start_measure(prober_path="./code_files/energy_measurer/prob_nvsmi.py", write_each=5)
         measurer.save_measures()
-        measurer.get_dual_graph(take_above=0, markers=[])#[{'time':5*60, 'marker':'o', 'col':'best_of_gen'}]
+        markers = [{'time':5*60, 'marker':'o', 'col':'best_of_gen'},
+                   {'time':10*60, 'marker':'*', 'col':'best_of_gen'},
+                   {'time':30*60, 'marker':'*', 'col':'best_of_gen'},
+                   {'time':60*60, 'marker':'*', 'col':'best_of_gen'}]
+        measurer.get_dual_graph(markers=markers, cpu_avg=cpu_avg, gpu_avg=gpu_avg)
     
     plot_dual_graph(parent_output_dir, job_id)
 
     
-def main(job_id:str, cross_op:str, mutation_op:str, domain:str, n_runs:int=1, n_gens:int=100):
-    run_n_measures(n_runs=n_runs, cross_op=cross_op, mutation_op=mutation_op, domain=domain, n_gens=n_gens, job_id=job_id)
+def main(job_id:str, cross_op:str, mutation_op:str, domain:str, n_runs:int=1, n_gens:int=100, sleep_time:int=0):
+    run_n_measures(n_runs=n_runs, cross_op=cross_op, mutation_op=mutation_op, domain=domain, n_gens=n_gens, job_id=job_id, sleep_time=sleep_time)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -70,6 +79,8 @@ if __name__ == "__main__":
                     help='The program may recive the number of measures to be taken')
     parser.add_argument('--n_gens', type=int, default=100,
                     help='The program may recive the number of generations to be taken')
+    parser.add_argument('--sleep_time', type=int, default=0,
+                        help='The program may recive the sleep time before measures')
     
     
     args = parser.parse_args()
@@ -78,5 +89,6 @@ if __name__ == "__main__":
          mutation_op=args.mutation_op,
          domain=args.domain, 
          n_runs=args.n_runs, 
-         n_gens=args.n_gens)
+         n_gens=args.n_gens,
+         sleep_time=args.sleep_time)
     

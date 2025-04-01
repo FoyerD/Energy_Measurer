@@ -10,12 +10,15 @@ class Plotter:
         self._ax_right = self._ax_left.twinx()
         self._axes = [self._ax_left, self._ax_right]
         self._dbs_dict = dbs  # Dictionary mapping names to DataFrames
+
         
-    def add_marker(self, time: float, col, db_name: str, axes_n: int = 0, marker='o'):
-        self._dbs_dict[db_name], timedif_col = dfh.add_time_diff(self._dbs_dict[db_name], time, col)
+    def add_marker(self, time: float, time_col:str, col:str, db_name: str, axes_n: int = 0, color=None, marker='o'):
+        self._dbs_dict[db_name], timedif_col = dfh.add_time_diff(self._dbs_dict[db_name], time, time_col)
         marker_idx = self._dbs_dict[db_name][timedif_col].idxmin()
         marker_row = self._dbs_dict[db_name].loc[marker_idx]
-        self._axes[axes_n].scatter(marker_row[self._x_col], marker_row[col], color='black', zorder=5, label=f'{time/60} min', marker=marker)
+        #self._axes[axes_n].scatter(marker_row[self._x_col], marker_row[col], color='black', zorder=5, label=f'{time/60} min', marker=marker)
+        self._axes[axes_n].axvline(x=marker_row['gen'], color=color, linestyle='--', label=timedif_col)
+
     
     def take_above(self, col, value, db_name: str):
         self._dbs_dict[db_name] = self._dbs_dict[db_name][self._dbs_dict[db_name][col] >= value]
@@ -47,12 +50,13 @@ class Plotter:
         
         # Determine ticks
         num_ticks = 5
-        ticks = np.linspace(self._dbs_dict[list(self._dbs_dict.keys())[0]]['gen'].min(),
-                            self._dbs_dict[list(self._dbs_dict.keys())[0]]['gen'].max(),
+        bottom_ticks = np.linspace(self._dbs_dict[list(self._dbs_dict.keys())[0]][self._x_col].min(),
+                            self._dbs_dict[list(self._dbs_dict.keys())[0]][self._x_col].max(),
                             num=num_ticks).tolist()
-        ticks = list(map(int, sorted(set(ticks))))  # Convert to integers and remove duplicates
-        
-        plt.xticks(ticks)
+        bottom_ticks = list(map(int, sorted(set(bottom_ticks))))  # Convert to integers and remove duplicates
+
+        self._ax_right.set_xticks(bottom_ticks)
         self._fig.legend()
         self._fig.tight_layout()
         self._fig.savefig(path, dpi=300)
+        
