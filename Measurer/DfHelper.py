@@ -5,7 +5,8 @@ def convert_to_datetime(df: pd.DataFrame, col: str):
     return df
 
 def add_seconds_passed(df: pd.DataFrame, col: str='time', new_col:str='seconds_passed'):
-    df['seconds_passed'] = (df[col] - df[col].min()).dt.total_seconds()
+    df[new_col] = (df[col] - df[col].min()).dt.total_seconds()
+    df[new_col] = pd.to_numeric(df[new_col], errors='coerce')
     return df
 
 def get_diff_col(df: pd.DataFrame, col: str, new_col:str):

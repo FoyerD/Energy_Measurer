@@ -33,7 +33,7 @@ def add_gen_to_gpu_df(gpu_df, cpu_df):
     return cpu_df_split, gpu_df_split
 
 def subtract_per_diff(df, avg, col, time_col='seconds_passed'):
-    df[time_col] -= avg * df[time_col].diff().fillna(0)
+    df[col] -= avg * df[time_col].diff().fillna(0)
     return df 
     
 
@@ -41,11 +41,10 @@ def plot_dual_graph(cpu_dfs, gpu_dfs, statistics_dfs, output_dir, markers:list=N
     assert(len(cpu_dfs) == len(gpu_dfs) == len(statistics_dfs))
     if markers is None:
         markers = []
-    new_cpu_dfs = [subtract_per_diff(dfh.get_diff_col(preprocess_df(df).sort_values(by='gen'), 'measure', 'measure'), 'measure', 'seconds_passed') for df in cpu_dfs]
-    new_gpu_dfs = [dfh.add_cumsum(dfh.subtract_amount(preprocess_df(df), gpu_avg, 'measure').sort_values(by='gen'),col='measure', new_col='measure') for df in gpu_dfs]
+    new_cpu_dfs = [subtract_per_diff(dfh.get_diff_col(preprocess_df(df).sort_values(by='gen'), 'measure', 'measure'), avg=cpu_avg, col='measure', time_col='seconds_passed') for df in cpu_dfs]
+    new_gpu_dfs = [dfh.add_cumsum(dfh.subtract_amount(preprocess_df(df), gpu_avg, 'measure').sort_values(by='gen'), col='measure', new_col='measure') for df in gpu_dfs]
     new_statistics_dfs = [preprocess_df(df).sort_values(by='gen') for df in statistics_dfs]
     
-    new_cpu_dfs = [subtract_per_diff(df, cpu_avg, 'measure') for df in new_cpu_dfs]
     new_cpu_dfs, new_gpu_dfs = unzip([add_gen_to_gpu_df(dfs[0], dfs[1]) for dfs in zip(new_cpu_dfs, new_gpu_dfs)])
     new_statistics_dfs = [df[df['best_of_gen'] >= 0] for df in new_statistics_dfs]
     
@@ -86,7 +85,7 @@ def plot_dual_graph(cpu_dfs, gpu_dfs, statistics_dfs, output_dir, markers:list=N
         plotter.fill_between(col='best_of_gen', db_name='statistics', axes_n=1, color='green', dev=final_statistics_df['best_of_gen_std'])
     
     for marker in markers:
-        plotter.add_marker(time=marker['time'], time_col='seconds_passed', col=marker['col'], axes_n=1, db_name='statistics', marker=marker['marker'])
+        plotter.add_marker(time=marker['time'], time_col='seconds_passed', col=marker['col'], axes_n=1, db_name='statistics')
     
     plotter.save_fig(
         path=f'{output_dir}/dual_plot.png',
@@ -116,8 +115,10 @@ def read_dfs(output_dir):
 
 def main(output_dir, job_id, cpu_avg:float=0, gpu_avg:float=0):
     cpu_dfs, gpu_dfs, statistics_dfs = read_dfs(output_dir)
-    markers = [{'time':3*60, 'marker':'o', 'col':'best_of_gen'},
-                   {'time':20*60, 'marker':'*', 'col':'best_of_gen'}]
+    markers = [{'time':5*60, 'marker':'o', 'col':'best_of_gen'},
+                   {'time':10*60, 'marker':'*', 'col':'best_of_gen'},
+                   {'time':30*60, 'marker':'*', 'col':'best_of_gen'},
+                   {'time':60*60, 'marker':'*', 'col':'best_of_gen'}]
     plot_dual_graph(cpu_dfs, gpu_dfs, statistics_dfs, output_dir, markers=markers, cpu_avg=cpu_avg, gpu_avg=gpu_avg)
     print(f'Finished plotting {job_id}, found at {output_dir}')
 
