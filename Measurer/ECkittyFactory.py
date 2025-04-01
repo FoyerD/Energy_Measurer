@@ -23,8 +23,22 @@ class ECkittyFactory:
         dataset_n_items = len(dataset_item_weights)
         return dataset_item_weights, dataset_bin_capacity, dataset_n_items
     
+    
+    def make_bpp_evaluator(self, db_path:str, dataset_name:str):
+        fitness_dict = {}
+        dataset_item_weights, dataset_bin_capacity, dataset_n_items = self.get_bpp_info(db_path, dataset_name)
+        ind_length = dataset_n_items
+        min_bound, max_bound = 0, dataset_n_items - 1
+
+        bpp_eval = dnc_runner_eckity.BinPackingEvaluator(n_items=dataset_n_items, item_weights=dataset_item_weights,
+                                    bin_capacity=dataset_bin_capacity, fitness_dict=fitness_dict)
+        
+        return bpp_eval, ind_length, min_bound, max_bound
+    
     def create_dnc_op(self,
-                      db_path:str,
+                      individual_creator:Creator,
+                      evaluator: IndividualEvaluator,
+                      individual_length:int,
                       embedding_dim: int = 64,
                       running_mean_decay: float = 0.95,
                       batch_size: int = 1024,
@@ -35,20 +49,11 @@ class ECkittyFactory:
                       events = None,
                       loggers: list = None,
                       log_events:list = None):
-        fitness_dict = {}
-        dataset_name = 'BPP_14'
-        dataset_item_weights, dataset_bin_capacity, dataset_n_items = self.get_bpp_info(db_path, dataset_name)
-        ind_length = dataset_n_items
-        min_bound, max_bound = 0, dataset_n_items - 1
-
-        individual_creator = GAIntegerStringVectorCreator(length=ind_length, bounds=(min_bound, max_bound))
-        bpp_eval = dnc_runner_eckity.BinPackingEvaluator(n_items=dataset_n_items, item_weights=dataset_item_weights,
-                                    bin_capacity=dataset_bin_capacity, fitness_dict=fitness_dict)
 
         dnc_config = DeepNeuralCrossoverConfig(
             embedding_dim=embedding_dim,
-            sequence_length=ind_length,
-            num_embeddings=dataset_n_items + 1,
+            sequence_length=individual_length,
+            num_embeddings=individual_length + 1,
             running_mean_decay=running_mean_decay,
             batch_size=batch_size,
             learning_rate=learning_rate,
@@ -58,14 +63,14 @@ class ECkittyFactory:
         )
 
         dnc_op = DeepNeuralCrossover(probability=0.8, population_size=population_size, dnc_config=dnc_config,
-                                    individual_evaluator=bpp_eval, vector_creator=individual_creator, events=events)
+                                    individual_evaluator=evaluator, vector_creator=individual_creator, events=events)
         
         if(loggers is not None and log_events is not None
            and len(loggers) == len(log_events)):
             for logger, log_event in zip(loggers, log_events):
                 dnc_op.dnc_wrapper.register(log_event, logger.log)
         
-        return dnc_op, individual_creator, bpp_eval
+        return dnc_op
     
     def create_k_point_crossover(self,
                                 probability:int=1, 
@@ -82,6 +87,18 @@ class ECkittyFactory:
             for logger, log_event in zip(loggers, log_events):
                 op.register(log_event, logger.log)
         return op
+    
+    def create_uniform_mutation(self, probability:float=0.5, arity:int=1, probability_for_each:float=0.1, events=None, 
+                                loggers: list = None,
+                                log_events:list = None):
+        op = dnc_runner_eckity.IntVectorUniformMutation(probability=probability, probability_for_each=probability_for_each, arity=arity, events=events)
+
+        if(loggers is not None and log_events is not None
+           and len(loggers) == len(log_events)):
+            for logger, log_event in zip(loggers, log_events):
+                op.register(log_event, logger.log)
+
+        return op 
     
     def create_simple_evo(self,
                           individual_creator:Creator,

@@ -33,7 +33,11 @@ class Plotter:
     def fill_between(self, col: str, db_name: str, dev:pd.Series, axes_n: int = 0, color=None):
         x = self._dbs_dict[db_name][self._x_col]
         y = self._dbs_dict[db_name][col]
-        self._axes[axes_n].fill_between(x, y - dev, y + dev, color=color, alpha=0.5)
+        
+        y_low = y - dev
+        y_high = y + dev
+        
+        self._axes[axes_n].fill_between(x, y_low, y_high, color=color, alpha=0.2)
     
     def save_fig(self, path: str, title: str, x_labels: str, y_labels: str):
         for i, labels in enumerate(zip(x_labels, y_labels)):
