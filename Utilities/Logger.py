@@ -29,7 +29,11 @@ class Logger():
     def add_str_col(self, name: str, value: str):
         self.update_column(name, lambda: value)
         
-    def add_cpu_measure_col(self, job_id: str):
+    def add_cpu_measure_col(self):
+        self.update_column("measure", lambda: 0)
+        self.update_column("type", lambda: "CPU")
+
+    def add_slurm_cpu_measure_col(self, job_id: str):
         self.update_column("measure", lambda: str(subprocess.check_output(["sstat", "-j" + job_id, "-a", "--format=ConsumedEnergyRaw"])).split("\\n")[-2].strip())
         self.add_str_col("type", "CPU")
     

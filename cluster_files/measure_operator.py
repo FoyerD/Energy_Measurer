@@ -1,12 +1,12 @@
 import datetime
 
 import pandas as pd
-from Measurer.Logger import Logger
+from Utilities.Logger import Logger
 import os
 from nothing import get_nothing_avg
 import argparse
 from time import sleep
-from Measurer.Measurer import Measurer
+from cluster_files.Measurer import Measurer
 from plot import main as plot_dual_graph
 
 

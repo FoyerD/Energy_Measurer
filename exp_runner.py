@@ -1,0 +1,78 @@
+import datetime
+
+import pandas as pd
+from Utilities.Logger import Logger
+import os
+import argparse
+from time import sleep
+from Utilities.EckityWrapper import EckityWrapper
+
+
+
+def get_evaluator(wrapper:EckityWrapper, domain:str):
+    if(domain == 'bpp'):
+        return wrapper.setup_bpp_evaluator(db_path='./datasets_dnc/hard_parsed.json', dataset_name='BPP_14')
+    else:
+        raise ValueError(f'Domain {domain} not recognized')
+
+def get_crossover_op(wrapper:EckityWrapper, cross_op:str):
+    if(cross_op == 'dnc'):
+        return wrapper.setup_dnc(embedding_dim=64)
+    elif(cross_op == 'k_point'):
+        return wrapper.setup_k_point_crossover()
+    else:
+        raise ValueError(f'Operator {cross_op} not recognized')
+
+def get_mutation_op(wrapper:EckityWrapper, mutation_op:str):
+    if(mutation_op == 'uniform'):
+        return wrapper.setup_uniform_mutation()
+    else:
+        raise ValueError(f'Operator {mutation_op} not recognized')
+
+
+
+
+
+def main(cross_op:str, mutation_op:str, domain:str, n_gens:int=100, sleep_time:int=0):
+    wrappers = []
+    output_dir = os.path.join(os.getcwd(), "out_files", "exp_" + datetime.datetime.now().strftime("%Y%m%d_%H%M%S"))
+    os.makedirs(output_dir, exist_ok=True)
+    wrapper = EckityWrapper(output_dir=output_dir)
+    wrappers.append(wrapper)
+    
+    # evaluator
+    get_evaluator(wrapper, domain)
+    
+    # crossover operator
+    get_crossover_op(wrapper, cross_op)
+    
+    # mutation operator
+    get_mutation_op(wrapper, mutation_op)
+    
+    wrapper.create_simple_evo(population_size=100, max_generation=n_gens)
+
+    wrapper.start_measure(prober_path="./code_files/energy_wrapper/prob_nvsmi.py", write_each=5)
+    wrapper.save_measures()
+
+
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('crossover_op', type=str,
+                    help='The program must recive the crossover operator to be used')
+    parser.add_argument('mutation_op', type=str,
+                    help='The program must recive the mutation operator to be used')
+    parser.add_argument('domain', type=str,
+                    help='The program must recive the domain of the problem')
+    parser.add_argument('--n_gens', type=int, default=100,
+                    help='The program may recive the number of generations to be taken')
+    
+    
+    args = parser.parse_args()
+    
+    
+    main(cross_op=args.crossover_op,
+         mutation_op=args.mutation_op,
+         domain=args.domain,  
+         n_gens=args.n_gens,)

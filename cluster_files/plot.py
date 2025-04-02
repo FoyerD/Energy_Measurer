@@ -4,8 +4,8 @@ from sys import argv
 
 from matplotlib import pyplot as plt
 import pandas as pd
-from Measurer.Plotter import Plotter
-import Measurer.DfHelper as dfh
+from Utilities.Plotter import Plotter
+import Utilities.DfHelper as dfh
 
 def unzip(tuples):
     # Using zip() with * to unzip the list

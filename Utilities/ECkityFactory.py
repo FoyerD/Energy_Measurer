@@ -13,8 +13,8 @@ from torch.cuda import is_available
 
 
 class ECkittyFactory:
-    def __init__(self, job_id: int):
-        self._job_id = str(job_id)
+    def __init__(self):
+        pass
     
     def get_bpp_info(self, db_path:str, dataset_name:str):
         datasets_json = json.load(open(db_path, 'r'))

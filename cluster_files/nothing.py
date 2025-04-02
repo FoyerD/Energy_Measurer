@@ -2,9 +2,9 @@ from time import sleep
 import datetime
 import pandas as pd
 import sys
-from Measurer.Logger import Logger
-from Measurer.Measurer import Plotter
-import Measurer.DfHelper as dfh
+from Utilities.Logger import Logger
+from cluster_files.Measurer import Plotter
+import Utilities.DfHelper as dfh
 
 def get_nothing_avg(job_id, output_dir, total_time=0):
         cpu_file = f'{output_dir}/cpu_nothing.csv'

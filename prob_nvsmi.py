@@ -1,4 +1,4 @@
-from Measurer.Logger import Logger
+from Utilities.Logger import Logger
 import sys
 from time import sleep
 
@@ -12,7 +12,6 @@ def main():
     logger.add_time_col()
     logger.add_gpu_measure_col()
     logger.add_gen_col()
-    print('iters_untill_dump:' + str(iters_untill_dump))
     while True:
         logger.log()
         if(iters <= 0):
