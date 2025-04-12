@@ -1,22 +1,15 @@
-import datetime
-import os
 import subprocess
 import pandas as pd
 from DNC_mid_train.multiparent_wrapper import BEFORE_TRAIN_EVENT_NAME, AFTER_TRAIN_EVENT_NAME 
-from Utilities.ECkityFactory import ECkittyFactory
+from EckityExtended.ECkityFactory import ECkittyFactory
 from Utilities.Logger import Logger
 from Utilities.Logger import Logger
 from eckity.algorithms.simple_evolution import AFTER_GENERATION_EVENT_NAME
 import subprocess
 import pandas as pd
 from eckity.genetic_operators.selections.tournament_selection import TournamentSelection
-from eckity.creators.creator import Creator
-from eckity.evaluators.individual_evaluator import IndividualEvaluator
-import numpy as np
 from DNC_mid_train.DNC_eckity_wrapper import GAIntegerStringVectorCreator
-from DNC_mid_train import dnc_runner_eckity
 from DNC_mid_train.multiparent_wrapper import BEFORE_TRAIN_EVENT_NAME, AFTER_TRAIN_EVENT_NAME 
-from DNC_mid_train.dnc_runner_eckity import IntVectorUniformMutation
 
 
 class EckityWrapper:
@@ -35,25 +28,28 @@ class EckityWrapper:
         self._max_bound = None
         
         
-    def setup_dnc(self, embedding_dim:int=64, population_size:int=100):
+    def setup_dnc(self, embedding_dim:int=64, population_size:int=100, logging:bool=False):
         #TODO!: Make domain generic
 
         assert self._evaluator is not None, 'Evaluator must be set'
         assert self._creator is not None, 'Creator must be set'
         assert self._individual_length is not None, 'Individual length must be set'
         
-        
-        logger_before_train = Logger()
-        logger_before_train.add_time_col()
-        logger_before_train.add_cpu_measure_col()
-        self._cpu_loggers.append(logger_before_train)
-        
-        logger_after_train = Logger()
-        logger_after_train.add_time_col()
-        logger_after_train.add_cpu_measure_col()
-        self._cpu_loggers.append(logger_after_train)
-        
-        self._crossover_op = self._eckitty_factory.create_dnc_op(individual_creator=self._creator, evaluator=self._evaluator, individual_length=self._individual_length, population_size=population_size, embedding_dim=embedding_dim, loggers=[logger_before_train, logger_after_train], log_events=[BEFORE_TRAIN_EVENT_NAME, AFTER_TRAIN_EVENT_NAME])        
+        loggers = []
+        if logging:
+            logger_before_train = Logger()
+            logger_before_train.add_time_col()
+            logger_before_train.add_cpu_measure_col()
+            self._cpu_loggers.append(logger_before_train)
+            
+            logger_after_train = Logger()
+            logger_after_train.add_time_col()
+            logger_after_train.add_cpu_measure_col()
+            self._cpu_loggers.append(logger_after_train)
+            loggers.append(logger_before_train)
+            loggers.append(logger_after_train)
+
+        self._crossover_op = self._eckitty_factory.create_dnc_op(individual_creator=self._creator, evaluator=self._evaluator, individual_length=self._individual_length, population_size=population_size, embedding_dim=embedding_dim, loggers=loggers, log_events=[BEFORE_TRAIN_EVENT_NAME, AFTER_TRAIN_EVENT_NAME])        
         return self._crossover_op
     
     def setup_bpp_evaluator(self, db_path:str, dataset_name:str):
@@ -69,19 +65,25 @@ class EckityWrapper:
         self._mutation_op = self._eckitty_factory.create_uniform_mutation(probability=probability, arity=arity, probability_for_each=probability_for_each)
         return self._mutation_op
     
-    def create_simple_evo(self, population_size:int, max_generation:int, higher_is_better:bool=True):
+    def create_simple_evo(self, population_size:int, max_generation:int, higher_is_better:bool=True, logging:bool=False):
         assert self._crossover_op is not None, 'Crossover operator must be set'
         assert self._mutation_op is not None, 'Mutation operator must be set'
         
-        logger_after_generation = Logger()
-        logger_after_generation.add_time_col()
-        logger_after_generation.add_cpu_measure_col()
-        self._cpu_loggers.append(logger_after_generation)
+        loggers = []
 
-        logger_statistics = Logger()
-        logger_statistics.add_time_col()
-        self._statistics_loggers.append(logger_statistics)
-        
+        if logging:
+            logger_after_generation = Logger()
+            logger_after_generation.add_time_col()
+            logger_after_generation.add_cpu_measure_col()
+            self._cpu_loggers.append(logger_after_generation)
+
+            logger_statistics = Logger()
+            logger_statistics.add_time_col()
+            self._statistics_loggers.append(logger_statistics)
+
+            loggers.append(logger_after_generation)
+            loggers.append(logger_statistics)
+            
         
         selection = TournamentSelection(tournament_size=5, higher_is_better=higher_is_better)
         
@@ -92,20 +94,25 @@ class EckityWrapper:
                                                            selection_methods=[selection],
                                                            higher_is_better=higher_is_better,
                                                            operators_sequence=[self._crossover_op, self._mutation_op],
-                                                           loggers=[logger_after_generation, logger_statistics],
+                                                           loggers=loggers,
                                                            log_events=[AFTER_GENERATION_EVENT_NAME, AFTER_GENERATION_EVENT_NAME])
-        logger_statistics.add_best_of_gen_col(self._evo_algo)
-        logger_statistics.add_average_col(self._evo_algo)
+        if logging:
+            logger_statistics.add_best_of_gen_col(self._evo_algo)
+            logger_statistics.add_average_col(self._evo_algo)
         
         for logger in self._cpu_loggers + self._statistics_loggers:
             logger.add_gen_col(self._evo_algo)
     
     def start_measure(self, prober_path:str, write_each:int=1):
-        gpu_prober = self._start_prober(path=prober_path, write_each=write_each)
+        if prober_path is not None:
+            gpu_prober = self._start_prober(path=prober_path, write_each=write_each)
+
         if(len(self._cpu_loggers) > 0): self._cpu_loggers[0].log()
         self._evo_algo.evolve()
         self._evo_algo.execute()
-        gpu_prober.kill()
+
+        if prober_path is not None:
+            gpu_prober.kill()
         
     def _start_prober(self, path:str, write_each:int=1):
         return subprocess.Popen(["python", path, self._output_dir, self._output_dir, str(write_each)])

@@ -1,11 +1,8 @@
 import datetime
 
-import pandas as pd
-from Utilities.Logger import Logger
 import os
 import argparse
-from time import sleep
-from Utilities.EckityWrapper import EckityWrapper
+from EckityExtended.EckityWrapper import EckityWrapper
 
 
 
@@ -15,15 +12,15 @@ def get_evaluator(wrapper:EckityWrapper, domain:str):
     else:
         raise ValueError(f'Domain {domain} not recognized')
 
-def get_crossover_op(wrapper:EckityWrapper, cross_op:str):
+def get_crossover_op(wrapper:EckityWrapper, cross_op:str, logging:bool=False):
     if(cross_op == 'dnc'):
-        return wrapper.setup_dnc(embedding_dim=64)
+        return wrapper.setup_dnc(embedding_dim=64, logging=logging)
     elif(cross_op == 'k_point'):
         return wrapper.setup_k_point_crossover()
     else:
         raise ValueError(f'Operator {cross_op} not recognized')
 
-def get_mutation_op(wrapper:EckityWrapper, mutation_op:str):
+def get_mutation_op(wrapper:EckityWrapper, mutation_op:str, logging:bool=False):
     if(mutation_op == 'uniform'):
         return wrapper.setup_uniform_mutation()
     else:
@@ -33,7 +30,7 @@ def get_mutation_op(wrapper:EckityWrapper, mutation_op:str):
 
 
 
-def main(cross_op:str, mutation_op:str, domain:str, n_gens:int=100, sleep_time:int=0):
+def main(cross_op:str, mutation_op:str, domain:str, n_gens:int=100, sleep_time:int=0, logging:bool=False):
     wrappers = []
     output_dir = os.path.join(os.getcwd(), "out_files", "exp_" + datetime.datetime.now().strftime("%Y%m%d_%H%M%S"))
     os.makedirs(output_dir, exist_ok=True)
@@ -44,14 +41,15 @@ def main(cross_op:str, mutation_op:str, domain:str, n_gens:int=100, sleep_time:i
     get_evaluator(wrapper, domain)
     
     # crossover operator
-    get_crossover_op(wrapper, cross_op)
+    get_crossover_op(wrapper, cross_op, logging=logging)
     
     # mutation operator
-    get_mutation_op(wrapper, mutation_op)
+    get_mutation_op(wrapper, mutation_op, logging=logging)
     
     wrapper.create_simple_evo(population_size=100, max_generation=n_gens)
 
-    wrapper.start_measure(prober_path="./code_files/energy_wrapper/prob_nvsmi.py", write_each=5)
+    prober_path = None#os.path.join(os.getcwd(), "code_files", "energy_wrapper", "prob_nvsmi.py")
+    wrapper.start_measure(prober_path=prober_path, write_each=5)
     wrapper.save_measures()
 
 
@@ -67,7 +65,8 @@ if __name__ == "__main__":
                     help='The program must recive the domain of the problem')
     parser.add_argument('--n_gens', type=int, default=100,
                     help='The program may recive the number of generations to be taken')
-    
+    parser.add_argument('-l', '--logging', action='store_true',
+                    help='Enable logging during the execution')
     
     args = parser.parse_args()
     
@@ -75,4 +74,5 @@ if __name__ == "__main__":
     main(cross_op=args.crossover_op,
          mutation_op=args.mutation_op,
          domain=args.domain,  
-         n_gens=args.n_gens,)
+         n_gens=args.n_gens,
+         logging=args.logging)
