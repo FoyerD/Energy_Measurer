@@ -30,10 +30,10 @@ def get_mutation_op(wrapper:EckityWrapper, mutation_op:str, logging:bool=False):
 
 
 
-def main(cross_op:str, mutation_op:str, domain:str, n_gens:int=100, sleep_time:int=0, logging:bool=False):
+def main(cross_op:str, mutation_op:str, domain:str, output_dir:str, n_gens:int=100, sleep_time:int=0, logging:bool=False):
     wrappers = []
-    output_dir = os.path.join(os.getcwd(), "out_files", "exp_" + datetime.datetime.now().strftime("%Y%m%d_%H%M%S"))
-    os.makedirs(output_dir, exist_ok=True)
+    output_dir = output_dir#os.path.join(os.getcwd(), "out_files", "exp_" + datetime.datetime.now().strftime("%Y%m%d_%H%M%S"))
+    #os.makedirs(output_dir, exist_ok=True)
     wrapper = EckityWrapper(output_dir=output_dir)
     wrappers.append(wrapper)
     
@@ -67,6 +67,9 @@ if __name__ == "__main__":
                     help='The program may recive the number of generations to be taken')
     parser.add_argument('-l', '--logging', action='store_true',
                     help='Enable logging during the execution')
+    parser.add_argument('-o', '--output_dir', type=str, default=None,
+                    help='The program may recive the output directory to save the results')
+    
     
     args = parser.parse_args()
     
@@ -75,4 +78,5 @@ if __name__ == "__main__":
          mutation_op=args.mutation_op,
          domain=args.domain,  
          n_gens=args.n_gens,
-         logging=args.logging)
+         logging=args.logging,
+         output_dir=args.output_dir)
