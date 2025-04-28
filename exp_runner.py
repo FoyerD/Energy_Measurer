@@ -63,7 +63,7 @@ if __name__ == "__main__":
                     help='The program must recive the mutation operator to be used')
     parser.add_argument('domain', type=str,
                     help='The program must recive the domain of the problem')
-    parser.add_argument('--n_gens', type=int, default=100,
+    parser.add_argument('-n', '--n_gens', type=int, default=100,
                     help='The program may recive the number of generations to be taken')
     parser.add_argument('-l', '--logging', action='store_true',
                     help='Enable logging during the execution')
