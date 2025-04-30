@@ -125,7 +125,6 @@ class ECkittyFactory:
             max_generation=max_generation,
             statistics=statistics if statistics is not None else BestAverageWorstStatistics(should_print=False), random_seed=4242,should_print=False
         )
-        
         if(loggers is not None and log_events is not None
            and len(loggers) == len(log_events)):
             for logger, log_event in zip(loggers, log_events):

@@ -1,3 +1,4 @@
+import os
 import subprocess
 import pandas as pd
 from DNC_mid_train.multiparent_wrapper import BEFORE_TRAIN_EVENT_NAME, AFTER_TRAIN_EVENT_NAME 
@@ -65,24 +66,21 @@ class EckityWrapper:
         self._mutation_op = self._eckitty_factory.create_uniform_mutation(probability=probability, arity=arity, probability_for_each=probability_for_each)
         return self._mutation_op
     
-    def create_simple_evo(self, population_size:int, max_generation:int, higher_is_better:bool=True, logging:bool=False):
+    def create_simple_evo(self, population_size:int, max_generation:int, higher_is_better:bool=True, log_cpu:bool=False, log_statistics:bool=False):
         assert self._crossover_op is not None, 'Crossover operator must be set'
         assert self._mutation_op is not None, 'Mutation operator must be set'
         
-        loggers = []
 
-        if logging:
+        if log_cpu:
             logger_after_generation = Logger()
             logger_after_generation.add_time_col()
             logger_after_generation.add_cpu_measure_col()
             self._cpu_loggers.append(logger_after_generation)
 
+        if(log_statistics):
             logger_statistics = Logger()
             logger_statistics.add_time_col()
             self._statistics_loggers.append(logger_statistics)
-
-            loggers.append(logger_after_generation)
-            loggers.append(logger_statistics)
             
         
         selection = TournamentSelection(tournament_size=5, higher_is_better=higher_is_better)
@@ -94,9 +92,9 @@ class EckityWrapper:
                                                            selection_methods=[selection],
                                                            higher_is_better=higher_is_better,
                                                            operators_sequence=[self._crossover_op, self._mutation_op],
-                                                           loggers=loggers,
-                                                           log_events=[AFTER_GENERATION_EVENT_NAME, AFTER_GENERATION_EVENT_NAME])
-        if logging:
+                                                           loggers=self._cpu_loggers + self._statistics_loggers,
+                                                           log_events=[AFTER_GENERATION_EVENT_NAME] * len(self._cpu_loggers + self._statistics_loggers))
+        if log_statistics:
             logger_statistics.add_best_of_gen_col(self._evo_algo)
             logger_statistics.add_average_col(self._evo_algo)
         
@@ -131,7 +129,13 @@ class EckityWrapper:
         for logger in self._statistics_loggers:
             if(logger.num_logs() == 0):
                 continue
-            logger.to_csv(self._output_dir + f'/statistics.csv', append=not first)
+
+            if(os.path.exists(self._output_dir + f'/statistics.csv')):
+                with open(self._output_dir + f'/statistics.csv', 'a') as f:
+                    f.write('###\n')
+                logger.to_csv(self._output_dir + f'/statistics.csv', append=True, write_header=True)
+            else:
+                logger.to_csv(self._output_dir + f'/statistics.csv', append=False, write_header=True)
             logger.empty_logs()
             first = False
             

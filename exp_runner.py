@@ -30,7 +30,7 @@ def get_mutation_op(wrapper:EckityWrapper, mutation_op:str, logging:bool=False):
 
 
 
-def main(cross_op:str, mutation_op:str, domain:str, output_dir:str, n_gens:int=100, sleep_time:int=0, logging:bool=False):
+def main(cross_op:str, mutation_op:str, domain:str, output_dir:str, n_gens:int=100, sleep_time:int=0, log_cpu:bool=False, log_gpu:bool=False, logging:bool=False, log_statistics:bool=False):
     wrappers = []
     output_dir = output_dir#os.path.join(os.getcwd(), "out_files", "exp_" + datetime.datetime.now().strftime("%Y%m%d_%H%M%S"))
     #os.makedirs(output_dir, exist_ok=True)
@@ -46,7 +46,7 @@ def main(cross_op:str, mutation_op:str, domain:str, output_dir:str, n_gens:int=1
     # mutation operator
     get_mutation_op(wrapper, mutation_op, logging=logging)
     
-    wrapper.create_simple_evo(population_size=100, max_generation=n_gens)
+    wrapper.create_simple_evo(population_size=100, max_generation=n_gens, log_cpu=log_cpu, log_statistics=log_statistics)
 
     prober_path = None#os.path.join(os.getcwd(), "code_files", "energy_wrapper", "prob_nvsmi.py")
     wrapper.start_measure(prober_path=prober_path, write_each=5)
@@ -69,6 +69,10 @@ if __name__ == "__main__":
                     help='Enable logging during the execution')
     parser.add_argument('-o', '--output_dir', type=str, default=None,
                     help='The program may recive the output directory to save the results')
+    parser.add_argument('-cpu', '--log_cpu', action='store_true',
+                    help='Enable CPU logging')
+    parser.add_argument('-stats', '--log_statistics', action='store_true',
+                    help='Enable statistics logging')
     
     
     args = parser.parse_args()
@@ -79,4 +83,6 @@ if __name__ == "__main__":
          domain=args.domain,  
          n_gens=args.n_gens,
          logging=args.logging,
-         output_dir=args.output_dir)
+         output_dir=args.output_dir,
+         log_cpu=args.log_cpu,
+         log_statistics=args.log_statistics)
