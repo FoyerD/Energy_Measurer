@@ -47,12 +47,12 @@ class Logger():
     def add_average_col(self, algo: SimpleEvolution):
         self.update_column("average", lambda: float(algo.get_average_fitness()[0]))
         
-    def to_csv(self, path: str, append: bool = False, log_headers: bool = False):
+    def to_csv(self, path: str, append: bool = False, header: bool = False):
         df = pd.DataFrame(self._log_data)
         if append:
-            df.to_csv(path, index=False, mode='a', header=log_headers)
+            df.to_csv(path, index=False, mode='a', header=header)
         else:
-            df.to_csv(path, index=False, header=log_headers)
+            df.to_csv(path, index=False, header=header)
     
     def empty_logs(self):
         self._log_data = []

@@ -133,9 +133,9 @@ class EckityWrapper:
             if(os.path.exists(self._output_dir + f'/statistics.csv')):
                 with open(self._output_dir + f'/statistics.csv', 'a') as f:
                     f.write('###\n')
-                logger.to_csv(self._output_dir + f'/statistics.csv', append=True, write_header=True)
+                logger.to_csv(self._output_dir + f'/statistics.csv', append=True, header=True)
             else:
-                logger.to_csv(self._output_dir + f'/statistics.csv', append=False, write_header=True)
+                logger.to_csv(self._output_dir + f'/statistics.csv', append=False, header=True)
             logger.empty_logs()
             first = False
             
