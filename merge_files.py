@@ -4,9 +4,13 @@ import os
 import pandas as pd
 import Utilities.DfHelper as dfh
 
-def preprocess_df(df):
+def preprocess_df(df, datetime:bool=False):
     new_df = df.sort_values('time')
-    new_df['time'] = pd.to_datetime(new_df['time'], unit='s')
+    #TODO! Remove after meeting
+    if not datetime:
+        new_df['time'] = pd.to_datetime(new_df['time'], unit='s') + pd.Timedelta(hours=3)
+    else:
+        new_df['time'] = pd.to_datetime(new_df['time'])
     new_df = dfh.add_seconds_passed(new_df, col='time', new_col='seconds_passed')
     return new_df
 
@@ -21,7 +25,7 @@ def add_gen_to_df(measures_df, gen_df):
     return measure_df_split, gen_df_split
 
 
-def main(measures_dir, statistics_dir, out_dir):
+def main(measures_dir, statistics_dir, out_dir, mdatetime:bool=False, sdatetime:bool=False):
     measures = []
     statistics = []
     
@@ -32,12 +36,12 @@ def main(measures_dir, statistics_dir, out_dir):
         for file in files:
             if file.endswith('.csv'):
                 curr_df = pd.read_csv(os.path.join(root, file))
-                measures.append(preprocess_df(curr_df))
+                measures.append(preprocess_df(curr_df, mdatetime))
     for root, dirs, files in os.walk(statistics_dir):
         for file in files:
             if file.endswith('.csv'):
                 curr_df = pd.read_csv(os.path.join(root, file))
-                statistics.append(preprocess_df(curr_df))
+                statistics.append(preprocess_df(curr_df, sdatetime))
     
     assert len(measures) == len(statistics), "The number of measures and statistics files must be the same"
     
@@ -50,6 +54,7 @@ def main(measures_dir, statistics_dir, out_dir):
         
     all_measures_df = pd.concat(gened_measures).reset_index(drop=True)
     all_statistics_df = pd.concat(gened_statistics).reset_index(drop=True)
+        
     pkg_std = dfh.std_by_group(all_measures_df, group_col='gen', value_col='PKG')
     gpu_std = dfh.std_by_group(all_measures_df, group_col='gen', value_col='GPU')
     bog_std = dfh.std_by_group(all_statistics_df, group_col='gen', value_col='best_of_gen')
@@ -70,14 +75,18 @@ def main(measures_dir, statistics_dir, out_dir):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('measures_dir', type=str,
-                        help='The program must recive the output directory to be used')
+                        help='The program must recive dir containing measures files')
     parser.add_argument('statistics_dir', type=str,
-                        help='The program must recive the output directory to be used')
+                        help='The program must recive dir containing statistics files')
     parser.add_argument('out_dir', type=str,
                         help='The program must recive the output directory to be used')
+    parser.add_argument('--mdatetime', action='store_true',
+                        help='Indcate if using datetime or timestamp')
+    parser.add_argument('--sdatetime', action='store_true',
+                        help='Indcate if using datetime or timestamp')
     args = parser.parse_args()
     measures_dir = args.measures_dir
     statistics_dir = args.statistics_dir
     output_dir = args.out_dir
     os.makedirs(output_dir, exist_ok=True)
-    main(measures_dir, statistics_dir, output_dir)
+    main(measures_dir, statistics_dir, output_dir, args.mdatetime, args.sdatetime)
