@@ -2,6 +2,7 @@ import argparse
 import os
 
 def main(statistics_file:str, output_dir:str):
+    os.makedirs(output_dir, exist_ok=True)
     lines = None
     with open(statistics_file, 'r') as f:
         lines = f.readlines()
@@ -10,6 +11,8 @@ def main(statistics_file:str, output_dir:str):
     for i, measure in enumerate(measures):
         with open(os.path.join(output_dir, f'statistics_{i}.csv'), 'a') as f:
             f.write(measure)
+        
+        print(f"Wrote {os.path.join(output_dir, f'statistics_{i}.csv')}")
 
 
 if __name__ == '__main__':

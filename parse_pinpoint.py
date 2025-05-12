@@ -1,15 +1,32 @@
 import argparse
 import os
+import csv
 
 def main(pinpoint_file:str, output_dir:str):
-    lines = None
+    # Ensure output directory exists
+    os.makedirs(output_dir, exist_ok=True)
+
     with open(pinpoint_file, 'r') as f:
         lines = f.readlines()
-    
+
     measures = ''.join(lines).split('###')
-    for i, measure in enumerate(measures):
-        with open(os.path.join(output_dir, f'measure_{i}.csv'), 'a') as f:
-            f.write(measure)
+
+    for i, measure in enumerate(measures[1:]):
+        lines = measure.strip().splitlines()
+        header = ['time', 'PKG', 'GPU']
+        data_lines = lines[1:] if lines[0].startswith("Run") else lines
+
+        # Prepare data rows
+        data_rows = [line.strip().split(',') for line in data_lines if line.strip()]
+
+        # Write to CSV
+        output_path = os.path.join(output_dir, f'pinpoint_{i}.csv')
+        with open(output_path, 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(header)
+            writer.writerows(data_rows)
+
+        print(f"Wrote {output_path}")
 
 
 if __name__ == '__main__':

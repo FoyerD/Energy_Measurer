@@ -1,6 +1,6 @@
 import os
 import subprocess
-from datetime import datetime
+import time
 import pandas as pd
 from eckity.algorithms.simple_evolution import SimpleEvolution
 
@@ -24,7 +24,7 @@ class Logger():
         self.update_column("gen", (lambda: algo.event_name_to_data('')['generation_num']) if algo is not None else (lambda: None))
 
     def add_time_col(self):
-        self.update_column("time", lambda: datetime.now())
+        self.update_column("time", lambda: time.time())
     
     def add_str_col(self, name: str, value: str):
         self.update_column(name, lambda: value)

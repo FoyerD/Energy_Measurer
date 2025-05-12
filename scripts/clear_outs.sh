@@ -1,2 +1,2 @@
 #!/bin/bash
-rm -R -- out_files/*/
+rm -rf out_files/*/

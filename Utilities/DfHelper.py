@@ -29,12 +29,12 @@ def add_cumsum(df: pd.DataFrame, col: str, new_col: str):
 def max_by_group(df: pd.DataFrame, group_col: str, col: str):
     return df.loc[df.groupby(group_col)[col].idxmax()]
 
-def mean_by_group(df: pd.DataFrame, group_col: str, col:str):
+def mean_by_group(df: pd.DataFrame, group_col: str):
     mean_df = df.groupby(group_col).mean().reset_index()
     return mean_df
 
     
-def calculate_grouped_std(df, value_column, group_column):
+def std_by_group(df, value_col, group_col):
     """
     Calculate the standard deviation of a value column grouped by another column.
     
@@ -46,6 +46,6 @@ def calculate_grouped_std(df, value_column, group_column):
     Returns:
         pd.Series: Standard deviation of value_column for each group
     """
-    stds = df.groupby(group_column)[value_column].std().reset_index().fillna(0)
-    stds.columns = [group_column, f'{value_column}_std']
+    stds = df.groupby(group_col)[value_col].std().reset_index().fillna(0)
+    stds.columns = [group_col, f'{value_col}_std']
     return stds
