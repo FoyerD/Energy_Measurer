@@ -36,6 +36,10 @@ def main(measures_dir, statistics_dir, out_dir, mdatetime:bool=False, sdatetime:
         for file in files:
             if file.endswith('.csv'):
                 curr_df = pd.read_csv(os.path.join(root, file))
+                curr_df['PKG'] = (curr_df['PKG'] / 1000) * 0.25
+                curr_df['GPU'] = (curr_df['GPU'] / 1000) * 0.25
+                curr_df['PKG'] = curr_df['PKG'].cumsum()
+                curr_df['GPU'] = curr_df['GPU'].cumsum()
                 measures.append(preprocess_df(curr_df, mdatetime))
     for root, dirs, files in os.walk(statistics_dir):
         for file in files:
