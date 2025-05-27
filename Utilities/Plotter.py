@@ -26,8 +26,12 @@ class Plotter:
     def take_below(self, col, value, db_name: str):
         self._dbs_dict[db_name] = self._dbs_dict[db_name][self._dbs_dict[db_name][col] <= value]
     
-    def add_plot(self, col, db_name: str, axes_n: int = 0, color=None, label: str = None):
-        self._axes[axes_n].plot(self._dbs_dict[db_name][self._x_col], self._dbs_dict[db_name][col], label=label if label else col, color=color)
+    def add_plot(self, col, db_name: str, axes_n: int = 0, color=None, label: str = None, x: str = None):
+        if x is None:
+            x = self._dbs_dict[db_name][x_col]
+        self._axes[axes_n].plot(x, self._dbs_dict[db_name][col], label=label if label else col, color=color)
+    
+    
     
     def add_groupby_max_plot(self, col, db_name: str, axes_n: int = 0, label: str = None, color=None):
         grouped = self._dbs_dict[db_name].groupby(self._x_col)[col].max()

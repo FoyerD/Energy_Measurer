@@ -48,18 +48,63 @@ def plot_dual_graph(measures_df, statistics_df, output_dir:str, markers:list):
         y_labels=['Jouls', 'Fitness']
     )
 
+def plot_statistics_over_total(measures_df, statistics_df, output_dir: str, markers:list):
+    # Ensure TOTAL is available
+    measures_df['TOTAL'] = measures_df['PKG'] + measures_df['GPU']
+    
+    # Merge dataframes on 'gen' to align TOTAL and best_of_gen
+    merged_df = pd.merge(statistics_df, measures_df[['gen', 'TOTAL']], on='gen', how='inner')
+    
+    # Sort by TOTAL (optional, for cleaner plots)
+    merged_df = merged_df.sort_values(by='TOTAL')
 
-def main(measures_file:str, statistics_file:str, output_dir:str):
+    # Plot best_of_gen vs TOTAL
+    plt.figure(figsize=(10, 6))
+    plt.plot(
+        merged_df['TOTAL'],
+        merged_df['best_of_gen'],
+        label='Best of Gen Fitness vs TOTAL Energy',
+        color='green'
+    )
+    
+    # Optional: add confidence band using std
+    if 'best_of_gen_std' in statistics_df.columns:
+        std_map = statistics_df.set_index('gen')['best_of_gen_std']
+        std_vals = merged_df['gen'].map(std_map).fillna(0)
+        plt.fill_between(
+            merged_df['TOTAL'],
+            merged_df['best_of_gen'] - std_vals,
+            merged_df['best_of_gen'] + std_vals,
+            color='green',
+            alpha=0.2,
+            label='Std Dev'
+        )
+    
+    plt.xlabel('TOTAL Energy (Joules)')
+    plt.ylabel('Best of Gen Fitness')
+    plt.title('Best Fitness vs Total Energy Consumed')
+    plt.legend()
+    plt.grid(True)
+    
+    plt.savefig(f'{output_dir}/statistics_over_total.png')
+    plt.close()
+
+
+def main(measures_file:str, statistics_file:str, output_dir:str, over_energy:bool=False):
     measures_df = pd.read_csv(measures_file)
     statistics_df = pd.read_csv(statistics_file)
     statistics_df = statistics_df[statistics_df['best_of_gen'] > 0]
-    plot_dual_graph(measures_df, statistics_df, output_dir, markers=[
-        # {'time': 0, 'col': 'best_of_gen'},
-        # {'time': 60*5, 'col': 'best_of_gen'},
-        # {'time': 60*10, 'col': 'best_of_gen'},
-        # {'time': 60*15, 'col': 'best_of_gen'},
-        # {'time': 60*20, 'col': 'best_of_gen'},
-    ])
+    markers = [
+            # {'time': 0, 'col': 'best_of_gen'},
+            # {'time': 60*5, 'col': 'best_of_gen'},
+            # {'time': 60*10, 'col': 'best_of_gen'},
+            # {'time': 60*15, 'col': 'best_of_gen'},
+            # {'time': 60*20, 'col': 'best_of_gen'},
+        ]
+    if over_energy:
+        plot_statistics_over_total(measures_df, statistics_df, output_dir, markers=markers)
+    else:
+        plot_dual_graph(measures_df, statistics_df, output_dir, markers=markers)
     
 
 
@@ -72,8 +117,11 @@ if __name__ == "__main__":
                     help='The program must recive the statistics file to be parsed')
     parser.add_argument('out_dir', type=str,
                     help='The program must recive the output directory to be used')
+    parser.add_argument('--over_energy', action='store_true',
+                    help='Indicate if plotting statistics over total energy consumed')
     args = parser.parse_args()
     os.makedirs(args.out_dir, exist_ok=True)
     main(measures_file=args.measures_file,
         statistics_file=args.statistics_file,
-         output_dir=args.out_dir)
+         output_dir=args.out_dir,
+         over_energy=args.over_energy)
