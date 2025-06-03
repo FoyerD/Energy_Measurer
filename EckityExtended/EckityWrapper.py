@@ -30,8 +30,6 @@ class EckityWrapper:
         
         
     def setup_dnc(self, embedding_dim:int=64, population_size:int=100, logging:bool=False):
-        #TODO!: Make domain generic
-
         assert self._evaluator is not None, 'Evaluator must be set'
         assert self._creator is not None, 'Creator must be set'
         assert self._individual_length is not None, 'Individual length must be set'
