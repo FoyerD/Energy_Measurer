@@ -56,6 +56,11 @@ class EckityWrapper:
         self._creator = GAIntegerStringVectorCreator(length=self._individual_length, bounds=(min_bound, max_bound))
         return self._evaluator, self._individual_length, min_bound, max_bound
     
+    def setup_frozen_lake_evaluator(self, map=None, slippery:bool=True, num_games:int=2000):
+        self._evaluator, self._individual_length = self._eckitty_factory.make_frozen_lake_evaluator(map=map, slippery=slippery, num_games=num_games)
+        self._creator = GAIntegerStringVectorCreator(length=self._individual_length, bounds=(0, 3))
+        return self._evaluator, self._individual_length
+    
     def setup_k_point_crossover(self, probability:float=0.5, arity:int=2, k:int=1):
         self._crossover_op = self._eckitty_factory.create_k_point_crossover(probability=probability, arity=arity, k=k)
         return self._crossover_op

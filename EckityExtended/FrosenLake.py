@@ -5,13 +5,17 @@ env = None
 def get_random_map(size: int):
     env = gym.make('FrozenLake-v1', desc=generate_random_map(size=size), render_mode="rgb_array")
     observation, info = env.reset()
-    env.render()
+    desc = env.unwrapped.desc.astype(str)  # This gives you the grid layout
+    print("Random Frozen Lake Map:")
+    print(desc)
     for _ in range(10):
         action = env.action_space.sample()  # Choose a random action
         observation, reward, terminated, truncated, info = env.step(action)
+        print(f"Action: {action}, Observation: {observation}, Reward: {reward}, Terminated: {terminated}, Truncated: {truncated}")
         # Render frame as RGB array
-        frame = env.render()  # Returns a NumPy array (image)
-
+        frame = env.render()
+        plt.imshow(frame)
+        plt.axis('off')
         if terminated or truncated:
             break
     
