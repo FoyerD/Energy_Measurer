@@ -37,6 +37,7 @@ class ECkittyFactory:
     
     def make_frozen_lake_evaluator(self, map = None, slippery: bool = True, num_games: int = 2000, ):
         fl_eval = dnc_runner_eckity.FrozenLakeEvaluator(map=map, slippery=slippery, num_games=num_games)
+    
         ind_length = fl_eval.get_individual_length()
         return fl_eval, ind_length
         

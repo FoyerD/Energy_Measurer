@@ -12,7 +12,7 @@ def get_evaluator(wrapper:EckityWrapper, domain:str):
     if(domain == 'bpp'):
         return wrapper.setup_bpp_evaluator(db_path='./datasets_dnc/hard_parsed.json', dataset_name='BPP_14')
     elif(domain == 'frozen_lake'):
-        return wrapper.setup_frozen_lake_evaluator()
+        return wrapper.setup_frozen_lake_evaluator(num_games=10)
     else:
         raise ValueError(f'Domain {domain} not recognized')
 
