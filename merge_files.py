@@ -25,7 +25,7 @@ def add_gen_to_df(measures_df, gen_df):
     return measure_df_split, gen_df_split
 
 
-def main(measures_dir, statistics_dir, out_dir, mdatetime:bool=False, sdatetime:bool=False):
+def main(measures_dir, statistics_dir, out_dir, mdatetime:bool=False, sdatetime:bool=False, base_pkg:float=0.0, base_gpu:float=0.0):
     measures = []
     statistics = []
     
@@ -36,8 +36,8 @@ def main(measures_dir, statistics_dir, out_dir, mdatetime:bool=False, sdatetime:
         for file in files:
             if file.endswith('.csv'):
                 curr_df = pd.read_csv(os.path.join(root, file))
-                curr_df['PKG'] = (curr_df['PKG'] / 1000) * 0.25
-                curr_df['GPU'] = (curr_df['GPU'] / 1000) * 0.25
+                curr_df['PKG'] = (curr_df['PKG'] - base_pkg) / 1000 * 0.25
+                curr_df['GPU'] = (curr_df['GPU'] - base_gpu) / 1000 * 0.25
                 curr_df['PKG'] = curr_df['PKG'].cumsum()
                 curr_df['GPU'] = curr_df['GPU'].cumsum()
                 measures.append(preprocess_df(curr_df, mdatetime))
@@ -88,9 +88,15 @@ if __name__ == '__main__':
                         help='Indcate if using datetime or timestamp')
     parser.add_argument('--sdatetime', action='store_true',
                         help='Indcate if using datetime or timestamp')
+    parser.add_argument('--base_pkg', type=float, default=0.0,
+                        help='Base PKG power in Watts')
+    parser.add_argument('--base_gpu', type=float, default=0.0,
+                        help='Base GPU power in Watts')
     args = parser.parse_args()
     measures_dir = args.measures_dir
     statistics_dir = args.statistics_dir
     output_dir = args.out_dir
+    base_pkg = args.base_pkg
+    base_gpu = args.base_gpu
     os.makedirs(output_dir, exist_ok=True)
-    main(measures_dir, statistics_dir, output_dir, args.mdatetime, args.sdatetime)
+    main(measures_dir, statistics_dir, output_dir, args.mdatetime, args.sdatetime, base_pkg, base_gpu)
