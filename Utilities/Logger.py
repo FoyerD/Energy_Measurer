@@ -9,7 +9,7 @@ class Logger():
         self._columns = columns if columns is not None else {}
         self._log_data = []  # List to hold log entries
 
-    def update_column(self, name: str, lamd):
+    def update_column(self, name: str, lamd: callable):
         '''
         :param name: name of column in logger
         :param lamd: lambda, will be probed with each log

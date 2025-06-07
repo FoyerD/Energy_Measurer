@@ -100,6 +100,8 @@ class EckityWrapper:
         if log_statistics:
             logger_statistics.add_best_of_gen_col(self._evo_algo)
             logger_statistics.add_average_col(self._evo_algo)
+            if(self._crossover_op == "dnc"):
+                logger_statistics.update_column("TRAINED", self._crossover_op.dnc_wrapper.is_trained)
         
         for logger in self._cpu_loggers + self._statistics_loggers:
             logger.add_gen_col(self._evo_algo)
