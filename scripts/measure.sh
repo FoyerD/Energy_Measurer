@@ -8,6 +8,6 @@ mkdir -p $OUT_DIR
 sudo chmod 777 $OUT_DIR
 OUT_FILE=$OUT_DIR/raw.txt
 
-pinpoint -c --timestamp -r 3 -i 250 -e rapl:pkg,GPU -o $OUT_FILE -- python exp_runner.py k_point uniform frozen_lake -n 10 -stats -o$OUT_DIR
+pinpoint -c --timestamp -r 5 -i 250 -e rapl:pkg,GPU -o $OUT_FILE -- python exp_runner.py dnc uniform frozen_lake -n 2000 -stats -o$OUT_DIR
 chmod 0777 $OUT_FILE
 
