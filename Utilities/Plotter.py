@@ -28,7 +28,7 @@ class Plotter:
     
     def add_plot(self, col, db_name: str, axes_n: int = 0, color=None, label: str = None, x: str = None):
         if x is None:
-            x = self._dbs_dict[db_name][x_col]
+            x = self._dbs_dict[db_name][self._x_col]
         self._axes[axes_n].plot(x, self._dbs_dict[db_name][col], label=label if label else col, color=color)
     
     

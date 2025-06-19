@@ -8,6 +8,7 @@ from Utilities.Logger import Logger
 from eckity.algorithms.simple_evolution import AFTER_GENERATION_EVENT_NAME
 import subprocess
 import pandas as pd
+from DNC_mid_train.DNC_eckity_wrapper import DeepNeuralCrossover
 from eckity.genetic_operators.selections.tournament_selection import TournamentSelection
 from DNC_mid_train.DNC_eckity_wrapper import GAIntegerStringVectorCreator
 from DNC_mid_train.multiparent_wrapper import BEFORE_TRAIN_EVENT_NAME, AFTER_TRAIN_EVENT_NAME 
@@ -100,8 +101,10 @@ class EckityWrapper:
         if log_statistics:
             logger_statistics.add_best_of_gen_col(self._evo_algo)
             logger_statistics.add_average_col(self._evo_algo)
-            if(self._crossover_op == "dnc"):
+            if(type(self._crossover_op) == DeepNeuralCrossover):
                 logger_statistics.update_column("TRAINED", self._crossover_op.dnc_wrapper.is_trained)
+            else:
+                logger_statistics.update_column("TRAINED", False)
         
         for logger in self._cpu_loggers + self._statistics_loggers:
             logger.add_gen_col(self._evo_algo)

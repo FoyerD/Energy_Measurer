@@ -6,11 +6,7 @@ import Utilities.DfHelper as dfh
 
 def preprocess_df(df, datetime:bool=False):
     new_df = df.sort_values('time')
-    #TODO! Remove after meeting
-    if not datetime:
-        new_df['time'] = pd.to_datetime(new_df['time'], unit='s') + pd.Timedelta(hours=3)
-    else:
-        new_df['time'] = pd.to_datetime(new_df['time'])
+    new_df['time'] = pd.to_datetime(new_df['time'])
     new_df = dfh.add_seconds_passed(new_df, col='time', new_col='seconds_passed')
     return new_df
 
