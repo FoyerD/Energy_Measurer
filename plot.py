@@ -94,9 +94,6 @@ def main(measures_file:str, statistics_file:str, output_dir:str, over_energy:boo
     measures_df = pd.read_csv(measures_file)
     statistics_df = pd.read_csv(statistics_file)
     statistics_df = statistics_df[statistics_df['best_of_gen'] > 0]
-    #TODO! REMOVE AFTER MEETING
-    statistics_df = statistics_df[statistics_df['gen'] <= 2000]
-    measures_df = measures_df[measures_df['gen'] <= 2000]
     markers = [
             # {'time': 0, 'col': 'best_of_gen'},
             # {'time': 60*5, 'col': 'best_of_gen'},
