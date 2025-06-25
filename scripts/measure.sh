@@ -1,5 +1,5 @@
 #!/bin/bash
-export PYTHONPATH="/home/debian/.local/lib/python3.9/site-packages:$PYTHONPATH"
+export PATH="/home/debian/anaconda3/envs/EM/bin/:/home/debian/repos/pinpoint/build:$PATH"
 source out_files/exp_num
 python --version
 OUT_DIR="out_files/exp_$EXP_NUM"
