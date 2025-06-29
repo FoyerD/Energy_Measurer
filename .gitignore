@@ -15,6 +15,7 @@ downloads/
 eggs/
 .eggs/
 out_files/
+imp_outs/
 sbatches/
 lib/
 lib64/
