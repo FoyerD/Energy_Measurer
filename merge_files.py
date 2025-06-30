@@ -57,6 +57,7 @@ def main(measures_dir, statistics_dir, out_dir, mdatetime:bool=False, sdatetime:
         
     pkg_std = dfh.std_by_group(all_measures_df, group_col='gen', value_col='PKG')
     gpu_std = dfh.std_by_group(all_measures_df, group_col='gen', value_col='GPU')
+    mem_std = dfh.std_by_group(all_measures_df, group_col='gen', value_col='MEMORY')
     bog_std = dfh.std_by_group(all_statistics_df, group_col='gen', value_col='best_of_gen')
     
     merged_measures_df = dfh.mean_by_group(all_measures_df, group_col='gen')
@@ -64,6 +65,7 @@ def main(measures_dir, statistics_dir, out_dir, mdatetime:bool=False, sdatetime:
     
     final_measures_df = pd.merge(merged_measures_df, pkg_std, on='gen', how='left').fillna(0)
     final_measures_df = pd.merge(final_measures_df, gpu_std, on='gen', how='left').fillna(0)
+    final_measures_df = pd.merge(final_measures_df, mem_std, on='gen', how='left').fillna(0)
     final_statistics_df = pd.merge(merged_statistics_df, bog_std, on='gen', how='left').fillna(0)
     
     final_measures_df.to_csv(os.path.join(out_dir, 'mean_measures.csv'), index=False)

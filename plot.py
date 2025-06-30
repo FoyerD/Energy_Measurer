@@ -33,11 +33,13 @@ def plot_dual_graph(measures_df, statistics_df, output_dir:str, markers:list, na
     plotter.add_plot(col='GPU', db_name='MEASURES', axes_n=0, label='GPU Jouls', color='blue')
     plotter.add_plot(col='TOTAL', db_name='MEASURES', axes_n=0, label='Total Jouls', color='purple')
     plotter.add_plot(col='best_of_gen', db_name='STATISTICS', axes_n=1, label='Best of Gen Fitness', color='green')
+    plotter.add_plot(col='MEMORY', db_name='STATISTICS', axes_n=0, label='Memory Usage (KB)', color='orange')
     
     
     plotter.fill_between(col='PKG', db_name='MEASURES', axes_n=0, color='red', dev=measures_df['PKG_std'])
     plotter.fill_between(col='GPU', db_name='MEASURES', axes_n=0, color='blue', dev=measures_df['GPU_std'])
     plotter.fill_between(col='best_of_gen', db_name='STATISTICS', axes_n=1, color='green', dev=statistics_df['best_of_gen_std'])
+    plotter.fill_between(col='MEMORY', db_name='STATISTICS', axes_n=0, color='orange', dev=statistics_df['MEMORY_std'])
     plotter.add_traind_lines(db_name='STATISTICS', axes_n=1)
     for marker in markers:
         plotter.add_marker(time=marker['time'], time_col='seconds_passed', col=marker['col'], axes_n=1, db_name='statistics')
@@ -110,9 +112,9 @@ def main(measures_file:str, statistics_file:str, output_dir:str, over_energy:boo
             # {'time': 60*20, 'col': 'best_of_gen'},
         ]
     if over_energy:
-        plot_statistics_over_total(measures_df, statistics_df, output_dir, markers=markers, name=f'dual_over_gen_{min_gen}_to_{max_gen}')
+        plot_statistics_over_total(measures_df, statistics_df, output_dir, markers=markers, name=f'statistics_over_jouls_{min_gen}_to_{max_gen}')
     else:
-        plot_dual_graph(measures_df, statistics_df, output_dir, markers=markers, name=f'statistics_over_jouls_{min_gen}_to_{max_gen}')
+        plot_dual_graph(measures_df, statistics_df, output_dir, markers=markers, name=f'dual_over_gen_{min_gen}_to_{max_gen}')
     
 
 

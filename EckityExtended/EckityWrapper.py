@@ -11,7 +11,8 @@ import pandas as pd
 from DNC_mid_train.DNC_eckity_wrapper import DeepNeuralCrossover
 from eckity.genetic_operators.selections.tournament_selection import TournamentSelection
 from DNC_mid_train.DNC_eckity_wrapper import GAIntegerStringVectorCreator
-from DNC_mid_train.multiparent_wrapper import BEFORE_TRAIN_EVENT_NAME, AFTER_TRAIN_EVENT_NAME 
+from DNC_mid_train.multiparent_wrapper import BEFORE_TRAIN_EVENT_NAME, AFTER_TRAIN_EVENT_NAME
+import psutil
 
 
 class EckityWrapper:
@@ -84,6 +85,7 @@ class EckityWrapper:
         if(log_statistics):
             logger_statistics = Logger()
             logger_statistics.add_time_col()
+            logger_statistics.update_column("MEMORY", lambda: psutil.virtual_memory().used / (1024))  # Convert bytes to KB
             self._statistics_loggers.append(logger_statistics)
             
         

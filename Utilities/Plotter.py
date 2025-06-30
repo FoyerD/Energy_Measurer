@@ -68,10 +68,8 @@ class Plotter:
     
     #TODO! genralize
     def add_traind_lines(self, db_name: str, axes_n: int = 0):
-        # Ensure TOTAL is available
         df = self._dbs_dict[db_name]
 
-        # Plot best_of_gen vs TOTAL
         trained_points = df.loc[df['TRAINED'] == True, 'gen']
         for total_val in trained_points:
             self._axes[axes_n].axvline(x=total_val, color='blue', linestyle='--', alpha=0.5)
