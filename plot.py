@@ -7,6 +7,7 @@ from matplotlib import pyplot as plt
 import pandas as pd
 from Utilities.Plotter import Plotter
 import Utilities.DfHelper as dfh
+from math import inf
 
 def unzip(tuples):
     # Using zip() with * to unzip the list
@@ -23,7 +24,7 @@ def subtract_per_diff(df, avg, col, time_col='seconds_passed'):
     return df 
     
 
-def plot_dual_graph(measures_df, statistics_df, output_dir:str, markers:list,name:str='dual_plot'):
+def plot_dual_graph(measures_df, statistics_df, output_dir:str, markers:list, name:str='dual_plot'):
     measures_df['TOTAL'] = measures_df['PKG'] + measures_df['GPU']
     dbs = {"MEASURES": measures_df, "STATISTICS": statistics_df}
     plotter = Plotter(x_col='gen', dbs=dbs)
@@ -48,7 +49,7 @@ def plot_dual_graph(measures_df, statistics_df, output_dir:str, markers:list,nam
         y_labels=['Jouls', 'Fitness']
     )
 
-def plot_statistics_over_total(measures_df, statistics_df, output_dir: str, markers:list):
+def plot_statistics_over_total(measures_df, statistics_df, output_dir: str, markers:list, name:str='statistics_over_jouls'):
     # Ensure TOTAL is available
     measures_df['TOTAL'] = measures_df['PKG'] + measures_df['GPU']
     
@@ -90,11 +91,11 @@ def plot_statistics_over_total(measures_df, statistics_df, output_dir: str, mark
     plt.legend()
     plt.grid(True)
     
-    plt.savefig(f'{output_dir}/statistics_over_total.png')
+    plt.savefig(f'{output_dir}/{name}.svg')
     plt.close()
 
 
-def main(measures_file:str, statistics_file:str, output_dir:str, over_energy:bool=False, min_gen:int=0, max_gen:int=6000):
+def main(measures_file:str, statistics_file:str, output_dir:str, over_energy:bool=False, min_gen:int=-inf, max_gen:int=inf):
     measures_df = pd.read_csv(measures_file)
     statistics_df = pd.read_csv(statistics_file)
     statistics_df = statistics_df[statistics_df['best_of_gen'] > 0]
@@ -109,9 +110,9 @@ def main(measures_file:str, statistics_file:str, output_dir:str, over_energy:boo
             # {'time': 60*20, 'col': 'best_of_gen'},
         ]
     if over_energy:
-        plot_statistics_over_total(measures_df, statistics_df, output_dir, markers=markers, )
+        plot_statistics_over_total(measures_df, statistics_df, output_dir, markers=markers, name=f'dual_over_gen_{min_gen}_to_{max_gen}')
     else:
-        plot_dual_graph(measures_df, statistics_df, output_dir, markers=markers)
+        plot_dual_graph(measures_df, statistics_df, output_dir, markers=markers, name=f'statistics_over_jouls_{min_gen}_to_{max_gen}')
     
 
 

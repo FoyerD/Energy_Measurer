@@ -62,6 +62,7 @@ class Plotter:
         self._ax_right.set_xticks(bottom_ticks)
         self._fig.legend()
         self._fig.tight_layout()
+        self._fig.set_size_inches(18.5, 10.5)
         self._fig.savefig(path, dpi=300)
     
     
