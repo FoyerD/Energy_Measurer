@@ -50,7 +50,7 @@ class EckityWrapper:
             loggers.append(logger_before_train)
             loggers.append(logger_after_train)
 
-        self._crossover_op = self._eckitty_factory.create_dnc_op(individual_creator=self._creator, evaluator=self._evaluator, individual_length=self._individual_length, population_size=population_size, embedding_dim=embedding_dim, loggers=loggers, log_events=[BEFORE_TRAIN_EVENT_NAME, AFTER_TRAIN_EVENT_NAME], batch_size=4096)        
+        self._crossover_op = self._eckitty_factory.create_dnc_op(individual_creator=self._creator, evaluator=self._evaluator, individual_length=self._individual_length, population_size=population_size, embedding_dim=embedding_dim, loggers=loggers, log_events=[BEFORE_TRAIN_EVENT_NAME, AFTER_TRAIN_EVENT_NAME])        
         return self._crossover_op
     
     def setup_bpp_evaluator(self, db_path:str, dataset_name:str):
