@@ -7,7 +7,7 @@ def main(out_dir:str, measure_time:int):
     logger = Logger()
     logger.add_time_col()
     logger.add_str_col("COL", "void")
-    logger.update_column("MEMORY", lambda: psutil.Process.memory_info().rss / (1024))  # Total memory in KB
+    logger.update_column("MEMORY", lambda: psutil.Process().memory_info().rss / (1024))  # Total memory in KB
     start_time = time.time()
     while True:
         elapsed_time = time.time() - start_time
