@@ -85,7 +85,7 @@ class EckityWrapper:
         if(log_statistics):
             logger_statistics = Logger()
             logger_statistics.add_time_col()
-            logger_statistics.update_column("MEMORY", lambda: psutil.virtual_memory().used / (1024))  # Convert bytes to KB
+            logger_statistics.update_column("MEMORY", lambda: psutil.Process.memory_info().rss / (1024))  # Convert bytes to KB
             self._statistics_loggers.append(logger_statistics)
             
         
