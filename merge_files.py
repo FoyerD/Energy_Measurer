@@ -14,7 +14,7 @@ def add_gen_to_df(measures_df, gen_df):
     measures_df['type'] = 'MEASURE'
     gen_df['type'] = 'GEN'
     merged_df = pd.concat([measures_df, gen_df]).sort_values(by='time')
-    merged_df = merged_df.ffill().bfill() #filling empty gen entries of GPU
+    merged_df['gen'] = merged_df['gen'].ffill().bfill() #filling empty gen entries of GPU
     # Split the merged_db into two DataFrames based on 'type'
     measure_df_split = merged_df[merged_df['type'] == 'MEASURE'].drop(columns=['type']).reset_index(drop=True)
     gen_df_split = merged_df[merged_df['type'] == 'GEN'].drop(columns=['type']).reset_index(drop=True)
