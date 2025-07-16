@@ -29,20 +29,13 @@ class PlotUtils:
         
         ax.fill_between(x, y_low, y_high, color=color, alpha=0.2)
     
-    def save_fig(fig:Figure, axes:list[Axes], path: str, title: str, x_labels: str, y_labels: str, num_ticks: int = 5):
+    def save_fig(fig:Figure, axes:list[Axes], path: str, title: str, x_labels: str, y_labels: str, ticks=list[int]):
         for i, labels in enumerate(zip(x_labels, y_labels)):
             axes[i].set_xlabel(labels[0])
             axes[i].set_ylabel(labels[1])
         fig.suptitle(title)
-        
-        # Determine ticks
-        num_ticks = 5
-        bottom_ticks = np.linspace(self._dbs_dict[list(self._dbs_dict.keys())[0]][self._x_col].min(),
-                            self._dbs_dict[list(self._dbs_dict.keys())[0]][self._x_col].max(),
-                            num=num_ticks).tolist()
-        bottom_ticks = list(map(int, sorted(set(bottom_ticks))))  # Convert to integers and remove duplicates
-
-        axes[0].set_xticks(bottom_ticks)
+    
+        axes[0].set_xticks(ticks)
         fig.legend()
         fig.tight_layout()
         fig.set_size_inches(18.5, 10.5)
