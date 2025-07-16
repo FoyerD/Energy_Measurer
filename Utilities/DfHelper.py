@@ -17,10 +17,16 @@ def subtract_amount(df: pd.DataFrame, amount: float, col: str):
     df[col] = df[col] - amount
     return df
 
-def add_time_diff(df: pd.DataFrame, time: float, col: str='seconds_passed'):
-    timedif_col = f'time_diff_{time/60}'
-    df[timedif_col] = (df[col] - time).abs()
-    return df, timedif_col
+def add_diff_col(df: pd.DataFrame, point: float, col_name: str='seconds_passed'):
+    diff_col = f'{col_name}_diff_{point}'
+    df[diff_col] = (df[col_name] - point).abs()
+    return df, diff_col
+
+def take_above(df: pd.DataFrame, col_name:str, value:float):
+    df[col_name] = df[df[col_name] >= value]
+
+def take_below(df: pd.DataFrame, col_name:str, value:float):
+    df[col_name] = df[df[col_name] <= value]
 
 def add_cumsum(df: pd.DataFrame, col: str, new_col: str):
     df[new_col] = df[col].cumsum()
