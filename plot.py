@@ -1,12 +1,8 @@
 import argparse
-from os import walk
 import os
-from sys import argv
 
 from matplotlib import pyplot as plt
 import pandas as pd
-from Utilities.Plotter import Plotter
-import Utilities.DfHelper as dfh
 from math import inf
 
 def unzip(tuples):

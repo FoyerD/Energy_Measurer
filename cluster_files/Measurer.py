@@ -5,7 +5,7 @@ from time import sleep
 import pandas as pd
 from DNC_mid_train.multiparent_wrapper import BEFORE_TRAIN_EVENT_NAME, AFTER_TRAIN_EVENT_NAME 
 from Utilities.ECkityFactory import ECkittyFactory
-from Utilities.Plotter import Plotter
+from Utilities.PlotUtils import Plotter
 from Utilities.Logger import Logger
 from Utilities.Logger import Logger
 from eckity.algorithms.simple_evolution import AFTER_GENERATION_EVENT_NAME

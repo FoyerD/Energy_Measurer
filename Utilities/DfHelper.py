@@ -1,4 +1,7 @@
 import pandas as pd
+from pandas.core.frame import DataFrame
+from numpy import linspace
+
 
 def convert_to_datetime(df: pd.DataFrame, col: str):
     df[col] = pd.to_datetime(df[col])
@@ -55,3 +58,20 @@ def std_by_group(df, value_col, group_col):
     stds = df.groupby(group_col)[value_col].std().reset_index().fillna(0)
     stds.columns = [group_col, f'{value_col}_std']
     return stds
+
+def get_ticks(df:DataFrame, x_col:str, num_ticks:int=5):
+    """
+    Generate evenly spaced ticks for the x-axis based on the minimum and maximum values of a specified column.
+    
+    Parameters:
+        df (DataFrame): The DataFrame containing the data.
+        x_col (str): The column name to base the ticks on.
+        num_ticks (int): The number of ticks to generate.
+    
+    Returns:
+        list: A list of tick values.
+    """
+    min_val = df[x_col].min()
+    max_val = df[x_col].max()
+    ticks = linspace(min_val, max_val, num=num_ticks).tolist()
+    return list(map(int, sorted(set(ticks))))  # Convert to integers and remove duplicates
