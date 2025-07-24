@@ -30,7 +30,7 @@ def get_mutation_op(measurer:Measurer, mutation_op:str):
     else:
         raise ValueError(f'Operator {mutation_op} not recognized')
 
-def run_n_measures(job_id:str, cross_op:str, mutation_op:str, domain:str, n_runs:int=1, n_gens:int=100, sleep_time:int=0):
+def run_n_measures(job_id:str, cross_op:str, mutation_op:str, domain:str, n_runs:int=1, n_gen:int=100, sleep_time:int=0):
     measurers = []
     parent_output_dir = f"./code_files/energy_measurer/out_files/{job_id}"
     cpu_avg, gpu_avg = get_nothing_avg(job_id, parent_output_dir, total_time=60 * 60)
@@ -49,7 +49,7 @@ def run_n_measures(job_id:str, cross_op:str, mutation_op:str, domain:str, n_runs
         # mutation operator
         get_mutation_op(measurer, mutation_op)
         
-        measurer.create_simple_evo(population_size=100, max_generation=n_gens)
+        measurer.create_simple_evo(population_size=100, max_generation=n_gen)
 
         measurer.start_measure(prober_path="./code_files/energy_measurer/prob_nvsmi.py", write_each=5)
         measurer.save_measures()
@@ -62,8 +62,8 @@ def run_n_measures(job_id:str, cross_op:str, mutation_op:str, domain:str, n_runs
     plot_dual_graph(parent_output_dir, job_id)
 
     
-def main(job_id:str, cross_op:str, mutation_op:str, domain:str, n_runs:int=1, n_gens:int=100, sleep_time:int=0):
-    run_n_measures(n_runs=n_runs, cross_op=cross_op, mutation_op=mutation_op, domain=domain, n_gens=n_gens, job_id=job_id, sleep_time=sleep_time)
+def main(job_id:str, cross_op:str, mutation_op:str, domain:str, n_runs:int=1, n_gen:int=100, sleep_time:int=0):
+    run_n_measures(n_runs=n_runs, cross_op=cross_op, mutation_op=mutation_op, domain=domain, n_gen=n_gen, job_id=job_id, sleep_time=sleep_time)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -77,7 +77,7 @@ if __name__ == "__main__":
                     help='The program must recive the domain of the problem')
     parser.add_argument('--n_runs', type=int, default=1,
                     help='The program may recive the number of measures to be taken')
-    parser.add_argument('--n_gens', type=int, default=100,
+    parser.add_argument('--n_gen', type=int, default=100,
                     help='The program may recive the number of generations to be taken')
     parser.add_argument('--sleep_time', type=int, default=0,
                         help='The program may recive the sleep time before measures')
@@ -89,6 +89,6 @@ if __name__ == "__main__":
          mutation_op=args.mutation_op,
          domain=args.domain, 
          n_runs=args.n_runs, 
-         n_gens=args.n_gens,
+         n_gen=args.n_gen,
          sleep_time=args.sleep_time)
     

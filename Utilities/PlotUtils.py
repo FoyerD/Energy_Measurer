@@ -41,7 +41,7 @@ class PlotUtils:
         fig.savefig(path, dpi=300)
     
     
-    def add_vertical_line_cont(ax:plt.Axes, df:DataFrame, value, col_name:str, x_col:str, color='blue', linestyle='--', label:str='marker'):
+    def add_vertical_line_dis(ax:plt.Axes, df:DataFrame, value, col_name:str, x_col:str, color='blue', linestyle='--', label:str='marker'):
         points = df.loc[df[col_name] == value, x_col]
         for total_val in points:
             ax.axvline(x=total_val, color=color, linestyle=linestyle, alpha=0.5)
