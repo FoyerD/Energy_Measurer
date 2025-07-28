@@ -1,13 +1,10 @@
 import argparse
-from os import walk
 import os
-from sys import argv
 
 from matplotlib import pyplot as plt
 import pandas as pd
-from Utilities.Plotter import Plotter
-import Utilities.DfHelper as dfh
 from math import inf
+from Utilities.Plotter import Plotter
 
 def unzip(tuples):
     # Using zip() with * to unzip the list
@@ -43,7 +40,13 @@ def plot_dual_graph(measures_df, statistics_df, output_dir:str, markers:list, na
         plotter.add_marker(time=marker['time'], time_col='seconds_passed', col=marker['col'], axes_n=1, db_name='statistics')
     
     plotter.save_fig(
-        path=f'{output_dir}/{name}.svg',
+        path=f'{output_dir}/svgs/{name}.svg',
+        title='MEASURES/Statistics vs Time',
+        x_labels=['Generation', 'Generation'],
+        y_labels=['Jouls', 'Fitness']
+    )
+    plotter.save_fig(
+        path=f'{output_dir}/pngs/{name}.png',
         title='MEASURES/Statistics vs Time',
         x_labels=['Generation', 'Generation'],
         y_labels=['Jouls', 'Fitness']
@@ -90,7 +93,8 @@ def plot_memory_over_gens(measures_df, statistics_df, output_dir: str, name:str=
     plt.legend()
     plt.grid(True)
     
-    plt.savefig(f'{output_dir}/{name}.svg')
+    plt.savefig(f'{output_dir}/svgs/{name}.svg')
+    plt.savefig(f'{output_dir}/pngs/{name}.png')
     plt.close()
 
 def plot_statistics_over_total(measures_df, statistics_df, output_dir: str, markers, name:str='statistics_over_jouls'):
@@ -135,7 +139,8 @@ def plot_statistics_over_total(measures_df, statistics_df, output_dir: str, mark
     plt.legend()
     plt.grid(True)
     
-    plt.savefig(f'{output_dir}/{name}.svg')
+    plt.savefig(f'{output_dir}/svgs/{name}.svg')
+    plt.savefig(f'{output_dir}/pngs/{name}.png')
     plt.close()
 
 
@@ -179,7 +184,8 @@ def plot_memory_over_jouls(measures_df, statistics_df, output_dir: str, name:str
     plt.legend()
     plt.grid(True)
     
-    plt.savefig(f'{output_dir}/{name}.svg')
+    plt.savefig(f'{output_dir}/svgs/{name}.svg')
+    plt.savefig(f'{output_dir}/pngs/{name}.png')
     plt.close()
 
 def main(measures_file:str, statistics_file:str, output_dir:str, over_energy:bool=False, min_gen:int=-inf, max_gen:int=inf):
