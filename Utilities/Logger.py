@@ -1,13 +1,15 @@
-import os
 import subprocess
 import time
 import pandas as pd
 from eckity.algorithms.simple_evolution import SimpleEvolution
-
+import os
 class Logger():
-    def __init__(self, columns: dict = None):
+    def __init__(self, columns: dict = None, output_file: str = None):
         self._columns = columns if columns is not None else {}
         self._log_data = []  # List to hold log entries
+        self._dump_each = 10
+        self._first_dump = True
+        self.output_file = output_file
 
     def update_column(self, name: str, lamd: callable):
         '''
@@ -19,6 +21,15 @@ class Logger():
     def log(self, *args, **kwargs):
         log_entry = {key: str(self._columns[key]()) for key in self._columns}
         self._log_data.append(log_entry)
+        if len(self._log_data) >= self._dump_each:
+            if(os.path.exists(self.output_file)):
+                with open(self.output_file, 'a') as f:
+                    f.write('###\n')
+            if self._first_dump:
+                self.log_headers(self.output_file)
+                self._first_dump = False
+            self.dump_rows(self.output_file)
+            self.empty_logs()
 
     def add_gen_col(self, algo: SimpleEvolution = None):
         self.update_column("gen", (lambda: algo.event_name_to_data('')['generation_num']) if algo is not None else (lambda: None))
@@ -67,3 +78,10 @@ class Logger():
     
     def get_df(self):
         return pd.DataFrame(self._log_data)
+    
+    def dump_rows(self, path: str):
+        df = self.get_df()
+        if not df.empty:
+            df.to_csv(path, index=False, mode='a', header=False)
+        else:
+            print("No logs to dump.")

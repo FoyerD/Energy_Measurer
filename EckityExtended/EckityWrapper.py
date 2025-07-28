@@ -83,7 +83,7 @@ class EckityWrapper:
             self._cpu_loggers.append(logger_after_generation)
 
         if(log_statistics):
-            logger_statistics = Logger()
+            logger_statistics = Logger(output_file=os.path.join(self._output_dir, "statistics.csv"))
             logger_statistics.add_time_col()
             logger_statistics.update_column("MEMORY", lambda: psutil.Process().memory_info().rss / (1024))  # Convert bytes to KB
             self._statistics_loggers.append(logger_statistics)
@@ -141,8 +141,8 @@ class EckityWrapper:
                 continue
 
             if(os.path.exists(self._output_dir + f'/statistics.csv')):
-                with open(self._output_dir + f'/statistics.csv', 'a') as f:
-                    f.write('###\n')
+                # with open(self._output_dir + f'/statistics.csv', 'a') as f:
+                #     f.write('###\n')
                 logger.to_csv(self._output_dir + f'/statistics.csv', append=True, header=True)
             else:
                 logger.to_csv(self._output_dir + f'/statistics.csv', append=False, header=True)
