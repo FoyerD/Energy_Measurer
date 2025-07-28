@@ -22,10 +22,10 @@ class Logger():
         log_entry = {key: str(self._columns[key]()) for key in self._columns}
         self._log_data.append(log_entry)
         if len(self._log_data) >= self._dump_each:
-            if(os.path.exists(self.output_file)):
-                with open(self.output_file, 'a') as f:
-                    f.write('###\n')
             if self._first_dump:
+                if(os.path.exists(self.output_file)):
+                    with open(self.output_file, 'a') as f:
+                        f.write('###\n')
                 self.log_headers(self.output_file)
                 self._first_dump = False
             self.dump_rows(self.output_file)
