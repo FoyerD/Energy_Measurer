@@ -1,8 +1,8 @@
-import os
 import subprocess
 import time
 import pandas as pd
 from eckity.algorithms.simple_evolution import SimpleEvolution
+import psutil
 
 class Logger():
     def __init__(self, columns: dict = None):
@@ -67,3 +67,13 @@ class Logger():
     
     def get_df(self):
         return pd.DataFrame(self._log_data)
+    
+    def add_memory_col(self, units:str, process: psutil.Process = None):
+        if process is None:
+            process = psutil.Process()
+        if units == 'KB':
+            self.update_column("MEMORY", lambda: process.memory_info().rss / (1024))
+        elif units == 'MB':
+            self.update_column("MEMORY", lambda: process.memory_info().rss / (1024 ** 2))
+        elif units == 'GB':
+            self.update_column("MEMORY", lambda: process.memory_info().rss / (1024 ** 3))

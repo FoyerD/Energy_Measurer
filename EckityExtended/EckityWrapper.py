@@ -24,11 +24,9 @@ class EckityWrapper:
         self._output_dir = output_dir
         self._crossover_op = None
         self._mutation_op = None
-        self._evaliator = None
+        self._evaluator = None
         self._creator = None
         self._individual_length = None
-        self._min_bound = None
-        self._max_bound = None
         
         
     def setup_dnc(self, embedding_dim:int=64, population_size:int=100, logging:bool=False):

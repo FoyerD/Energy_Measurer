@@ -1,59 +1,113 @@
-import datetime
-import os
 import argparse
-from EckityExtended.EckityWrapper import EckityWrapper
+import os
+from eckity.algorithms.simple_evolution import SimpleEvolution
+from eckity.creators import Creator
+from eckity.genetic_operators import GeneticOperator
+from eckity.evaluators import IndividualEvaluator
+import EckityExtended.ECkityFactory as EckityFactory
+from DNC_mid_train.DNC_eckity_wrapper import GAIntegerStringVectorCreator
+from Utilities.Logger import Logger
+from eckity.genetic_operators.selections.tournament_selection import TournamentSelection
+from eckity.algorithms.simple_evolution import AFTER_GENERATION_EVENT_NAME
 
 
 
 
+def main(crossover_op_name:str, mutation_op:str, domain:str, output_dir:str, n_gen:int=100, sleep_time:int=0, log_cpu:bool=False, log_gpu:bool=False, logging:bool=False, log_statistics:bool=False, **kwargs):
 
-def get_evaluator(wrapper:EckityWrapper, domain:str):
-    if(domain == 'bpp'):
-        return wrapper.setup_bpp_evaluator(db_path='./datasets_dnc/hard_parsed.json', dataset_name='BPP_14')
-    elif(domain == 'frozen_lake'):
-        return wrapper.setup_frozen_lake_evaluator(num_games=5, slippery=True)
-    else:
-        raise ValueError(f'Domain {domain} not recognized')
-
-def get_crossover_op(wrapper:EckityWrapper, cross_op:str, logging:bool=False):
-    if(cross_op == 'dnc'):
-        return wrapper.setup_dnc(embedding_dim=64, logging=logging)
-    elif(cross_op == 'k_point'):
-        return wrapper.setup_k_point_crossover()
-    else:
-        raise ValueError(f'Operator {cross_op} not recognized')
-
-def get_mutation_op(wrapper:EckityWrapper, mutation_op:str, logging:bool=False):
-    if(mutation_op == 'uniform'):
-        return wrapper.setup_uniform_mutation()
-    else:
-        raise ValueError(f'Operator {mutation_op} not recognized')
-
-
-
-
-
-def main(cross_op:str, mutation_op:str, domain:str, output_dir:str, n_gen:int=100, sleep_time:int=0, log_cpu:bool=False, log_gpu:bool=False, logging:bool=False, log_statistics:bool=False):
-    wrappers = []
-    output_dir = output_dir#os.path.join(os.getcwd(), "out_files", "exp_" + datetime.datetime.now().strftime("%Y%m%d_%H%M%S"))
-    #os.makedirs(output_dir, exist_ok=True)
-    wrapper = EckityWrapper(output_dir=output_dir)
-    wrappers.append(wrapper)
+    evo_algo: SimpleEvolution = None
+    output_dir: str = None
+    crossover_op: GeneticOperator = None
+    mutation_op: GeneticOperator = None
+    evaluator: IndividualEvaluator = None
+    creator: Creator = None
+    individual_length: int = None
+    higher_is_better: bool = True
     
     # evaluator
-    get_evaluator(wrapper, domain)
+    if(domain == 'bpp'):
+        assert 'db_path' in kwargs, "db_path must be provided for BPP domain"
+        assert 'dataset_name' in kwargs, "dataset_name must be provided for BPP domain"
+
+        evaluator, individual_length, min_bound, max_bound = EckityFactory.make_bppp_evaluator(db_path=kwargs['db_path'], dataset_name=kwargs['dataset_name'])
+        creator = GAIntegerStringVectorCreator(length=individual_length, bounds=(min_bound, max_bound))
+        higher_is_better = True
+    
+    elif(domain == 'frozen_lake'):
+        evaluator, individual_length = EckityFactory.make_frozen_lake_evaluator(map=map, slippery=kwargs.get('slippery', False), num_games=kwargs.get('num_games', 5))
+        creator = GAIntegerStringVectorCreator(length=individual_length, bounds=(0, 3))
+        higher_is_better = True
+
+    else:
+        raise ValueError(f'Domain {domain} not recognized')
     
     # crossover operator
-    get_crossover_op(wrapper, cross_op, logging=logging)
+    if(crossover_op_name == 'dnc'):
+        crossover_op = EckityFactory.create_dnc_op(individual_creator=creator,
+                                                     evaluator=evaluator,
+                                                     individual_length=individual_length,
+                                                     population_size=100,
+                                                     embedding_dim=64,
+                                                     loggers=None,
+                                                     log_events=None,
+                                                     batch_size=1024)
+    elif(crossover_op_name == 'k_point'):
+        crossover_op = EckityFactory.create_k_point_crossover(probability=kwargs.get('probability', 0.5),
+                                                              arity=kwargs.get('c_arity', 2),
+                                                              k=kwargs.get('k', 1))
+    else:
+        raise ValueError(f'Operator {crossover_op_name} not recognized')
     
     # mutation operator
-    get_mutation_op(wrapper, mutation_op, logging=logging)
+    if(mutation_op == 'uniform'):
+        mutation_op = EckityFactory.create_uniform_mutation(probability=kwargs.get('probability', 0.1),
+                                                     arity=kwargs.get('m_arity', 1))
+    else:
+        raise ValueError(f'Operator {mutation_op} not recognized')
     
-    wrapper.create_simple_evo(population_size=100, max_generation=n_gen, log_cpu=log_cpu, log_statistics=log_statistics)
+    
+    # Logger setup
+    statistics_logger = Logger()
+    statistics_logger.add_time_col()
+    statistics_logger.add_memory_col(units='KB')
+    
+    # Selection operator
+    selection = TournamentSelection(tournament_size=5, higher_is_better=higher_is_better)
+    evo_algo = EckityFactory.create_simple_evo(population_size=kwargs.get('population_size', 100),
+                                                           max_generation=n_gen,
+                                                           individual_creator=creator,
+                                                           evaluator=evaluator,
+                                                           selection_methods=[selection],
+                                                           higher_is_better=higher_is_better,
+                                                           operators_sequence=[crossover_op, mutation_op],
+                                                           loggers=[statistics_logger],
+                                                           log_events=[AFTER_GENERATION_EVENT_NAME])
+    
+    statistics_logger.add_best_of_gen_col(evo_algo)
+    statistics_logger.add_average_col(evo_algo)
+    statistics_logger.add_gen_col(evo_algo)
+    
+    if(crossover_op_name == 'dnc'):
+        statistics_logger.update_column("TRAINED", crossover_op.dnc_wrapper.is_trained)
+    else:
+        statistics_logger.update_column("TRAINED", False)
 
-    prober_path = None#os.path.join(os.getcwd(), "code_files", "energy_wrapper", "prob_nvsmi.py")
-    wrapper.start_measure(prober_path=prober_path, write_each=5)
-    wrapper.save_measures()
+    # Start the experiment
+    evo_algo.evolve()
+    evo_algo.execute()
+    
+
+    if(statistics_logger.num_logs() == 0):
+        return
+
+    if(os.path.exists(output_dir + f'/statistics.csv')):
+        with open(output_dir + f'/statistics.csv', 'a') as f:
+            f.write('###\n')
+        statistics_logger.to_csv(output_dir + f'/statistics.csv', append=True, header=True)
+    else:
+        statistics_logger.to_csv(output_dir + f'/statistics.csv', append=False, header=True)
+    statistics_logger.empty_logs()
+
 
 
 
@@ -81,7 +135,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     
-    main(cross_op=args.crossover_op,
+    main(crossover_op_name=args.crossover_op,
          mutation_op=args.mutation_op,
          domain=args.domain,  
          n_gen=args.n_gen,
