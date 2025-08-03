@@ -77,7 +77,7 @@ def main(crossover_op_name:str, mutation_op_name:str, domain:str, output_dir:str
     # Selection operator
     selection = TournamentSelection(tournament_size=5, higher_is_better=higher_is_better)
     evo_algo = EckityFactory.create_simple_evo(population_size=evolution_args['population_size'],
-                                                           max_generation=evolution_args['max_generations'],
+                                                           max_generation=evolution_args['max_generation'],
                                                            individual_creator=creator,
                                                            evaluator=evaluator,
                                                            selection_methods=[selection],
