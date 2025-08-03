@@ -9,11 +9,12 @@ from DNC_mid_train.DNC_eckity_wrapper import GAIntegerStringVectorCreator
 from Utilities.Logger import Logger
 from eckity.genetic_operators.selections.tournament_selection import TournamentSelection
 from eckity.algorithms.simple_evolution import AFTER_GENERATION_EVENT_NAME
+import tomllib
 
+def main(crossover_op_name:str, mutation_op:str, domain:str, output_dir:str, setup_file:str=None):
 
-
-
-def main(crossover_op_name:str, mutation_op:str, domain:str, output_dir:str, n_gen:int=100, sleep_time:int=0, log_cpu:bool=False, log_gpu:bool=False, logging:bool=False, log_statistics:bool=False, **kwargs):
+    with open(setup_file, 'rb') as f:
+        config = tomllib.load(f)
 
     evo_algo: SimpleEvolution = None
     output_dir: str = None
@@ -24,17 +25,17 @@ def main(crossover_op_name:str, mutation_op:str, domain:str, output_dir:str, n_g
     individual_length: int = None
     higher_is_better: bool = True
     
+    evolution_args = config['evolution']
+    
     # evaluator
+    domain_args = config['domain'][domain]
     if(domain == 'bpp'):
-        assert 'db_path' in kwargs, "db_path must be provided for BPP domain"
-        assert 'dataset_name' in kwargs, "dataset_name must be provided for BPP domain"
-
-        evaluator, individual_length, min_bound, max_bound = EckityFactory.make_bppp_evaluator(db_path=kwargs['db_path'], dataset_name=kwargs['dataset_name'])
+        evaluator, individual_length, min_bound, max_bound = EckityFactory.make_bppp_evaluator(db_path=domain_args['db_path'], dataset_name=domain_args['dataset_name'])
         creator = GAIntegerStringVectorCreator(length=individual_length, bounds=(min_bound, max_bound))
         higher_is_better = True
     
     elif(domain == 'frozen_lake'):
-        evaluator, individual_length = EckityFactory.make_frozen_lake_evaluator(map=map, slippery=kwargs.get('slippery', False), num_games=kwargs.get('num_games', 5))
+        evaluator, individual_length = EckityFactory.make_frozen_lake_evaluator(slippery=domain_args.get('slippery', False), num_games=domain_args.get('num_games', 5))
         creator = GAIntegerStringVectorCreator(length=individual_length, bounds=(0, 3))
         higher_is_better = True
 
@@ -42,26 +43,27 @@ def main(crossover_op_name:str, mutation_op:str, domain:str, output_dir:str, n_g
         raise ValueError(f'Domain {domain} not recognized')
     
     # crossover operator
+    crossover_args = config['crossover'][crossover_op_name]
     if(crossover_op_name == 'dnc'):
         crossover_op = EckityFactory.create_dnc_op(individual_creator=creator,
                                                      evaluator=evaluator,
                                                      individual_length=individual_length,
-                                                     population_size=100,
-                                                     embedding_dim=64,
+                                                     population_size=evolution_args['population_size'],
+                                                     embedding_dim=crossover_args['embedding_dim'],
                                                      loggers=None,
                                                      log_events=None,
-                                                     batch_size=1024)
+                                                     batch_size=crossover_args['batch_size'])
     elif(crossover_op_name == 'k_point'):
-        crossover_op = EckityFactory.create_k_point_crossover(probability=kwargs.get('probability', 0.5),
-                                                              arity=kwargs.get('c_arity', 2),
-                                                              k=kwargs.get('k', 1))
+        crossover_op = EckityFactory.create_k_point_crossover(probability=crossover_args['probability'],
+                                                              arity=crossover_args['c_arity'],
+                                                              k=crossover_args['k'])
     else:
         raise ValueError(f'Operator {crossover_op_name} not recognized')
     
     # mutation operator
     if(mutation_op == 'uniform'):
-        mutation_op = EckityFactory.create_uniform_mutation(probability=kwargs.get('probability', 0.1),
-                                                     arity=kwargs.get('m_arity', 1))
+        mutation_op = EckityFactory.create_uniform_mutation(probability=crossover_args['probability'],
+                                                     arity=crossover_args['arity'])
     else:
         raise ValueError(f'Operator {mutation_op} not recognized')
     
@@ -73,8 +75,8 @@ def main(crossover_op_name:str, mutation_op:str, domain:str, output_dir:str, n_g
     
     # Selection operator
     selection = TournamentSelection(tournament_size=5, higher_is_better=higher_is_better)
-    evo_algo = EckityFactory.create_simple_evo(population_size=kwargs.get('population_size', 100),
-                                                           max_generation=n_gen,
+    evo_algo = EckityFactory.create_simple_evo(population_size=evolution_args['population_size'],
+                                                           max_generation=evolution_args['max_generations'],
                                                            individual_creator=creator,
                                                            evaluator=evaluator,
                                                            selection_methods=[selection],
@@ -120,16 +122,10 @@ if __name__ == "__main__":
                     help='The program must recive the mutation operator to be used')
     parser.add_argument('domain', type=str,
                     help='The program must recive the domain of the problem')
-    parser.add_argument('-n', '--n_gen', type=int, default=100,
-                    help='The program may recive the number of generations to be taken')
-    parser.add_argument('-l', '--logging', action='store_true',
-                    help='Enable logging during the execution')
     parser.add_argument('-o', '--output_dir', type=str, default=None,
                     help='The program may recive the output directory to save the results')
-    parser.add_argument('-cpu', '--log_cpu', action='store_true',
-                    help='Enable CPU logging')
-    parser.add_argument('-stats', '--log_statistics', action='store_true',
-                    help='Enable statistics logging')
+    parser.add_argument('--setup_file', type=str, default='setup.toml',
+                        help='Path to the setup file containing additional parameters')
     
     
     args = parser.parse_args()
@@ -138,8 +134,5 @@ if __name__ == "__main__":
     main(crossover_op_name=args.crossover_op,
          mutation_op=args.mutation_op,
          domain=args.domain,  
-         n_gen=args.n_gen,
-         logging=args.logging,
          output_dir=args.output_dir,
-         log_cpu=args.log_cpu,
-         log_statistics=args.log_statistics)
+         setup_file=args.setup_file)

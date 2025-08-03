@@ -28,7 +28,7 @@ def get_bpp_info(db_path:str, dataset_name:str):
 
 def make_bpp_evaluator(db_path:str, dataset_name:str):
     fitness_dict = {}
-    dataset_item_weights, dataset_bin_capacity, dataset_n_items = self.get_bpp_info(db_path, dataset_name)
+    dataset_item_weights, dataset_bin_capacity, dataset_n_items = get_bpp_info(db_path, dataset_name)
     ind_length = dataset_n_items
     min_bound, max_bound = 0, dataset_n_items - 1
 

@@ -1,0 +1,37 @@
+exp_name = "dnc_bpp14_1024"
+
+
+[[domain]]
+    name = "bpp"
+    [[domain.args]]
+        db_path = ""
+        dataset_name = ""
+[[domain]]
+    name = "frozen_lake"
+    [[domain.args]]
+        num_games = 2000
+        slippery = true
+
+
+[[crossover]]
+    name = "dnc"
+    [[crossover.args]]
+        batch_size = 1024
+        embedding_dim = 64
+[[crossover]]
+    name = "k_point"
+    [[crossover.args]]
+        probability = 2
+        k = 2
+        p = 0.5
+
+
+[[mutation]]
+    name = "uniform"
+    [[mutation.args]]
+        probability = 0.1
+        arity = 1
+
+[evolution]
+    num_generations = 6000
+    population_size = 100
