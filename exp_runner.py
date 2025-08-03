@@ -11,7 +11,7 @@ from eckity.genetic_operators.selections.tournament_selection import TournamentS
 from eckity.algorithms.simple_evolution import AFTER_GENERATION_EVENT_NAME
 import tomllib
 
-def main(crossover_op_name:str, mutation_op:str, domain:str, output_dir:str, setup_file:str=None):
+def main(crossover_op_name:str, mutation_op_name:str, domain:str, output_dir:str, setup_file:str=None):
 
     with open(setup_file, 'rb') as f:
         config = tomllib.load(f)
@@ -61,12 +61,12 @@ def main(crossover_op_name:str, mutation_op:str, domain:str, output_dir:str, set
         raise ValueError(f'Operator {crossover_op_name} not recognized')
     
     # mutation operator
-    if(mutation_op == 'uniform'):
+    if(mutation_op_name == 'uniform'):
         mutation_op = EckityFactory.create_uniform_mutation(probability=crossover_args['probability'],
                                                      arity=crossover_args['arity'])
     else:
-        raise ValueError(f'Operator {mutation_op} not recognized')
-    
+        raise ValueError(f'Operator {mutation_op_name} not recognized')
+
     
     # Logger setup
     statistics_logger = Logger()

@@ -20,5 +20,5 @@
     arity = 1
 
 [evolution]
-    num_generations = 6000
+    num_generations = 10
     population_size = 100
