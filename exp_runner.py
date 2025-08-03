@@ -55,15 +55,16 @@ def main(crossover_op_name:str, mutation_op_name:str, domain:str, output_dir:str
                                                      batch_size=crossover_args['batch_size'])
     elif(crossover_op_name == 'k_point'):
         crossover_op = EckityFactory.create_k_point_crossover(probability=crossover_args['probability'],
-                                                              arity=crossover_args['c_arity'],
+                                                              arity=crossover_args['arity'],
                                                               k=crossover_args['k'])
     else:
         raise ValueError(f'Operator {crossover_op_name} not recognized')
     
     # mutation operator
+    mutation_args = config['mutation'][mutation_op_name]
     if(mutation_op_name == 'uniform'):
-        mutation_op = EckityFactory.create_uniform_mutation(probability=crossover_args['probability'],
-                                                     arity=crossover_args['arity'])
+        mutation_op = EckityFactory.create_uniform_mutation(probability=mutation_args['probability'],
+                                                     arity=mutation_args['arity'])
     else:
         raise ValueError(f'Operator {mutation_op_name} not recognized')
 
