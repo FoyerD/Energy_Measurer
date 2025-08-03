@@ -15,7 +15,7 @@ def main(crossover_op_name:str, mutation_op:str, domain:str, output_dir:str, set
 
     with open(setup_file, 'rb') as f:
         config = tomllib.load(f)
-
+        
     evo_algo: SimpleEvolution = None
     output_dir: str = None
     crossover_op: GeneticOperator = None
