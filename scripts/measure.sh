@@ -4,7 +4,7 @@ export PATH="/home/debian/anaconda3/envs/EM/bin/:/home/debian/repos/pinpoint/bui
 
 OUT_DIR=""
 NUM_EXPS=1
-SETUP_FILE="setup.toml"
+SETUP_FILE="setups/setup.toml"
 
 
 while getopts "o:" opt; do
