@@ -103,9 +103,7 @@ def main(crossover_op_name:str, mutation_op_name:str, domain:str, output_dir:str
         return
 
     if(os.path.exists(output_dir + f'/statistics.csv')):
-        with open(output_dir + f'/statistics.csv', 'a') as f:
-            f.write('###\n')
-        statistics_logger.to_csv(output_dir + f'/statistics.csv', append=True, header=True)
+        statistics_logger.to_csv(output_dir + f'/statistics.csv', append=True, header=False)
     else:
         statistics_logger.to_csv(output_dir + f'/statistics.csv', append=False, header=True)
     statistics_logger.empty_logs()
