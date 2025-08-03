@@ -27,7 +27,9 @@ class Logger():
             if self._first and os.path.exists(self._output_path):
                 with open(self._output_path, "a") as file:
                     file.write('###\n')
-            self.to_csv(self._output_path, append=not self._first, header=self._first)
+            if self._first:
+                self.log_headers(self._output_path)
+            self.to_csv(self._output_path, append=True, header=False)
             self.empty_logs()
             self._first = False
 
