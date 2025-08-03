@@ -1,3 +1,4 @@
+import os
 import subprocess
 import time
 import pandas as pd
@@ -5,9 +6,12 @@ from eckity.algorithms.simple_evolution import SimpleEvolution
 import psutil
 
 class Logger():
-    def __init__(self, columns: dict = None):
+    def __init__(self, columns: dict = None, dump_every: int = 100, output_path: str = "logs.csv"):
         self._columns = columns if columns is not None else {}
         self._log_data = []  # List to hold log entries
+        self._dump_every = dump_every
+        self._output_path = output_path if output_path is not None else "logs.csv"
+        self._first = True
 
     def update_column(self, name: str, lamd: callable):
         '''
@@ -19,6 +23,16 @@ class Logger():
     def log(self, *args, **kwargs):
         log_entry = {key: str(self._columns[key]()) for key in self._columns}
         self._log_data.append(log_entry)
+        if len(self._log_data) >= self._dump_every:
+            header = self._first
+            append = False
+            if self._first and os.path.exists(self._output_path):
+                append = True
+                with open(self._output_path, "a") as file:
+                    file.write('###\n')
+            self.to_csv(self._output_path, append=append, header=header)
+            self.empty_logs()
+            self._first = False
 
     def add_gen_col(self, algo: SimpleEvolution = None):
         self.update_column("gen", (lambda: algo.event_name_to_data('')['generation_num']) if algo is not None else (lambda: None))
@@ -53,7 +67,8 @@ class Logger():
             df.to_csv(path, index=False, mode='a', header=header)
         else:
             df.to_csv(path, index=False, header=header)
-    
+        del df
+
     def empty_logs(self):
         self._log_data = []
     

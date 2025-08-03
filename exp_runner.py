@@ -69,7 +69,7 @@ def main(crossover_op_name:str, mutation_op_name:str, domain:str, output_dir:str
 
     
     # Logger setup
-    statistics_logger = Logger()
+    statistics_logger = Logger(output_path=os.path.join(output_dir, 'statistics.csv'))
     statistics_logger.add_time_col()
     statistics_logger.add_memory_col(units='KB')
     
