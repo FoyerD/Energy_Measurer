@@ -30,7 +30,7 @@ def main(crossover_op_name:str, mutation_op:str, domain:str, output_dir:str, set
     # evaluator
     domain_args = config['domain'][domain]
     if(domain == 'bpp'):
-        evaluator, individual_length, min_bound, max_bound = EckityFactory.make_bppp_evaluator(db_path=domain_args['db_path'], dataset_name=domain_args['dataset_name'])
+        evaluator, individual_length, min_bound, max_bound = EckityFactory.make_bpp_evaluator(db_path=domain_args['db_path'], dataset_name=domain_args['dataset_name'])
         creator = GAIntegerStringVectorCreator(length=individual_length, bounds=(min_bound, max_bound))
         higher_is_better = True
     
