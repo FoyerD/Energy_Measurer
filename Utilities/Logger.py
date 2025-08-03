@@ -24,13 +24,10 @@ class Logger():
         log_entry = {key: str(self._columns[key]()) for key in self._columns}
         self._log_data.append(log_entry)
         if len(self._log_data) >= self._dump_every:
-            header = self._first
-            append = False
             if self._first and os.path.exists(self._output_path):
-                append = True
                 with open(self._output_path, "a") as file:
                     file.write('###\n')
-            self.to_csv(self._output_path, append=append, header=header)
+            self.to_csv(self._output_path, append=self._first, header=self._first)
             self.empty_logs()
             self._first = False
 
