@@ -4,7 +4,6 @@ import os
 from matplotlib import pyplot as plt
 import pandas as pd
 from math import inf
-from Utilities.Plotter import Plotter
 
 def unzip(tuples):
     # Using zip() with * to unzip the list
@@ -23,37 +22,61 @@ def subtract_per_diff(df, avg, col, time_col='seconds_passed'):
 
 def plot_dual_graph(measures_df, statistics_df, output_dir:str, markers:list, name:str='dual_plot'):
     measures_df['TOTAL'] = measures_df['PKG'] + measures_df['GPU']
-    dbs = {"MEASURES": measures_df, "STATISTICS": statistics_df}
-    plotter = Plotter(x_col='gen', dbs=dbs)
+    fig, ax1 = plt.subplots(figsize=(10, 6))
+    axes = [ax1, ax1.twinx()]    
     
-    plotter.add_plot(col='PKG', db_name='MEASURES', axes_n=0, label='PKG Jouls', color='red')
-    plotter.add_plot(col='GPU', db_name='MEASURES', axes_n=0, label='GPU Jouls', color='blue')
-    plotter.add_plot(col='TOTAL', db_name='MEASURES', axes_n=0, label='Total Jouls', color='purple')
-    plotter.add_plot(col='best_of_gen', db_name='STATISTICS', axes_n=1, label='Best of Gen Fitness', color='green')
+    axes[0].set_title('Energy Consumption')
+    axes[0].set_ylabel('Jouls')
+    axes[1].set_ylabel('Fitness')
     
-    
-    plotter.fill_between(col='PKG', db_name='MEASURES', axes_n=0, color='red', dev=measures_df['PKG_std'])
-    plotter.fill_between(col='GPU', db_name='MEASURES', axes_n=0, color='blue', dev=measures_df['GPU_std'])
-    plotter.fill_between(col='best_of_gen', db_name='STATISTICS', axes_n=1, color='green', dev=statistics_df['best_of_gen_std'])
-    plotter.add_traind_lines(db_name='STATISTICS', axes_n=1)
-    for marker in markers:
-        plotter.add_marker(time=marker['time'], time_col='seconds_passed', col=marker['col'], axes_n=1, db_name='statistics')
-    
-    plotter.save_fig(
-        path=f'{output_dir}/svgs/{name}.svg',
-        title='MEASURES/Statistics vs Time',
-        x_labels=['Generation', 'Generation'],
-        y_labels=['Jouls', 'Fitness']
-    )
-    plotter.save_fig(
-        path=f'{output_dir}/pngs/{name}.png',
-        title='MEASURES/Statistics vs Time',
-        x_labels=['Generation', 'Generation'],
-        y_labels=['Jouls', 'Fitness']
+    axes[0].plot(measures_df['gen'], measures_df['PKG'], color='red', label='PKG Jouls')
+    axes[0].fill_between(
+        measures_df['gen'],
+        measures_df['PKG'] - measures_df['PKG_std'],
+        measures_df['PKG'] + measures_df['PKG_std'],
+        color='red', alpha=0.2
     )
 
+    axes[0].plot(measures_df['gen'], measures_df['GPU'], color='blue', label='GPU Jouls')
+    axes[0].fill_between(
+        measures_df['gen'],
+        measures_df['GPU'] - measures_df['GPU_std'],
+        measures_df['GPU'] + measures_df['GPU_std'],
+        color='blue', alpha=0.2
+    )
+    
+    
+    axes[0].plot(measures_df['gen'], measures_df['TOTAL'], color='purple', label='GPU Jouls')
+    axes[0].fill_between(
+        measures_df['gen'],
+        measures_df['GPU'] - measures_df['GPU_std'],
+        measures_df['GPU'] + measures_df['GPU_std'],
+        color='purple', alpha=0.2
+    )
+    
+    
+    axes[1].plot(statistics_df['gen'], statistics_df['best_of_gen'], color='green', label='Best of Gen Fitness')
+    axes[1].fill_between(
+        statistics_df['gen'],
+        statistics_df['best_of_gen'] - statistics_df['best_of_gen_std'],
+        statistics_df['best_of_gen'] + statistics_df['best_of_gen_std'],
+        color='green', alpha=0.2
+    )
 
-def plot_memory_over_gens(measures_df, statistics_df, output_dir: str, name:str='memory_over_gens'):
+    points = statistics_df.loc[statistics_df['TRAINED'] == True, 'gen']
+    for total_val in points:
+        axes[0].axvline(x=total_val, color='blue', linestyle='--', alpha=0.5)
+
+
+    # for marker in markers:
+    #     plotter.add_marker(time=marker['time'], time_col='seconds_passed', col=marker['col'], axes_n=1, db_name='statistics')
+    
+    fig.legend(loc='upper left')
+    fig.savefig(f'{output_dir}/svgs/{name}.svg')
+    fig.savefig(f'{output_dir}/pngs/{name}.png')
+
+
+def plot_memory_over_gen(measures_df, statistics_df, output_dir: str, name:str='memory_over_gen'):
     # Ensure TOTAL is available
     measures_df['TOTAL'] = measures_df['PKG'] + measures_df['GPU']
     
@@ -83,7 +106,7 @@ def plot_memory_over_gens(measures_df, statistics_df, output_dir: str, name:str=
             label='Std Dev'
         )
     
-    trained_points = merged_df.loc[merged_df['TRAINED'] == True, 'gen']
+    trained_points = merged_df.loc[merged_df['TRAINED'] == 1.0, 'gen']
     for gen_val in trained_points:
         plt.axvline(x=gen_val, color='blue', linestyle='--', alpha=0.5)
     
@@ -128,7 +151,7 @@ def plot_statistics_over_total(measures_df, statistics_df, output_dir: str, mark
             label='Std Dev'
         )
     
-    trained_points = merged_df.loc[merged_df['TRAINED'] == True, 'TOTAL']
+    trained_points = merged_df.loc[merged_df['TRAINED'] == 1.0, 'TOTAL']
     for total_val in trained_points:
         plt.axvline(x=total_val, color='blue', linestyle='--', alpha=0.5)
     
@@ -202,12 +225,10 @@ def main(measures_file:str, statistics_file:str, output_dir:str, over_energy:boo
             # {'time': 60*15, 'col': 'best_of_gen'},
             # {'time': 60*20, 'col': 'best_of_gen'},
         ]
-    if over_energy:
-        plot_statistics_over_total(measures_df, statistics_df, output_dir, markers=markers, name=f'statistics_over_jouls_{min_gen}_to_{max_gen}')
-        plot_memory_over_jouls(measures_df, statistics_df, output_dir, name=f'memory_over_jouls_{min_gen}_to_{max_gen}')
-    else:
-        plot_memory_over_gens(measures_df, statistics_df, output_dir, name=f'memory_over_gens_{min_gen}_to_{max_gen}')
-        plot_dual_graph(measures_df, statistics_df, output_dir, markers=markers, name=f'dual_over_gen_{min_gen}_to_{max_gen}')
+    plot_statistics_over_total(measures_df, statistics_df, output_dir, markers=markers, name=f'statistics_over_jouls_{min_gen}_to_{max_gen}')
+    plot_memory_over_jouls(measures_df, statistics_df, output_dir, name=f'memory_over_jouls_{min_gen}_to_{max_gen}')
+    plot_memory_over_gen(measures_df, statistics_df, output_dir, name=f'memory_over_gen_{min_gen}_to_{max_gen}')
+    plot_dual_graph(measures_df, statistics_df, output_dir, markers=markers, name=f'dual_over_gen_{min_gen}_to_{max_gen}')
     
 
 
@@ -220,8 +241,6 @@ if __name__ == "__main__":
                     help='The program must recive the statistics file to be parsed')
     parser.add_argument('out_dir', type=str,
                     help='The program must recive the output directory to be used')
-    parser.add_argument('--over_energy', action='store_true',
-                    help='Indicate if plotting statistics over total energy consumed')
     parser.add_argument('--min_gen', type=int, default=0,
                     help='Minimum generation to consider in the plots')
     parser.add_argument('--max_gen', type=int, default=6000,
@@ -231,6 +250,5 @@ if __name__ == "__main__":
     main(measures_file=args.measures_file,
         statistics_file=args.statistics_file,
          output_dir=args.out_dir,
-         over_energy=args.over_energy,
          min_gen=args.min_gen,
          max_gen=args.max_gen)

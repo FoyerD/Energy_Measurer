@@ -1,0 +1,25 @@
+[domain.bpp]
+    db_path = "datasets_dnc/hard_parsed.json"
+    dataset_name = "BPP_181"
+[domain.frozen_lake]
+    num_games = 2000
+    slippery = true
+
+
+[crossover.dnc]
+    batch_size = 1024
+    embedding_dim = 64
+    probability = 0.8
+[crossover.k_point]
+    probability = 2
+    k = 2
+    p = 0.5
+
+
+[mutation.uniform]
+    probability = 0.1
+    arity = 1
+
+[evolution]
+    max_generation = 10
+    population_size = 100

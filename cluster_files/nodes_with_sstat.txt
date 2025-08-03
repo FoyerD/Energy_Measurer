@@ -1,4 +1,0 @@
-cpu256 no gpu
-1080
-3090
-pheno (usese an rtx 3090)
