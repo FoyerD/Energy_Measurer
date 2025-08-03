@@ -1,6 +1,6 @@
 [domain.bpp]
     db_path = "datasets_dnc/hard_parsed.json"
-    dataset_name = "BPP14"
+    dataset_name = "BPP_14"
 [domain.frozen_lake]
     num_games = 2000
     slippery = true

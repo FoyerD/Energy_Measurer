@@ -44,8 +44,7 @@ def make_frozen_lake_evaluator(map = None, slippery: bool = True, num_games: int
     return fl_eval, ind_length
     
 
-def create_dnc_op(self,
-                    individual_creator:Creator,
+def create_dnc_op(individual_creator:Creator,
                     evaluator: IndividualEvaluator,
                     individual_length:int,
                     embedding_dim: int = 64,
@@ -81,7 +80,7 @@ def create_dnc_op(self,
     
     return dnc_op
 
-def create_k_point_crossover(self,
+def create_k_point_crossover(
                             probability:int=1, 
                             arity:int=2, 
                             k:int=1, 
@@ -109,7 +108,7 @@ def create_uniform_mutation(probability:float=0.5, arity:int=1, probability_for_
 
     return op 
 
-def create_simple_evo(self,
+def create_simple_evo(
                         individual_creator:Creator,
                         evaluator: IndividualEvaluator,
                         operators_sequence:list,
