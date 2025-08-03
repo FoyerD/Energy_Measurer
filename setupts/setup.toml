@@ -1,26 +1,23 @@
-[[domain]]
-    [[domain.bpp]]
-        db_path = "datasets_dnc/hard_parsed.json"
-        dataset_name = "BPP14"
-    [[domain.frozen_lake]]
-        num_games = 2000
-        slippery = true
+[domain.bpp]
+    db_path = "datasets_dnc/hard_parsed.json"
+    dataset_name = "BPP14"
+[domain.frozen_lake]
+    num_games = 2000
+    slippery = true
 
 
-[[crossover]]
-    [[crossover.dnc]]
-        batch_size = 1024
-        embedding_dim = 64
-    [[crossover.k_point]]
-        probability = 2
-        k = 2
-        p = 0.5
+[crossover.dnc]
+    batch_size = 1024
+    embedding_dim = 64
+[crossover.k_point]
+    probability = 2
+    k = 2
+    p = 0.5
 
 
-[[mutation]]
-    [[mutation.uniform]]
-        probability = 0.1
-        arity = 1
+[mutation.uniform]
+    probability = 0.1
+    arity = 1
 
 [evolution]
     num_generations = 6000
