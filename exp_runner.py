@@ -129,10 +129,9 @@ if __name__ == "__main__":
     
     
     args = parser.parse_args()
-    
-    
+
     main(crossover_op_name=args.crossover_op,
-         mutation_op=args.mutation_op,
+         mutation_op_name=args.mutation_op,
          domain=args.domain,  
          output_dir=args.output_dir,
          setup_file=args.setup_file)

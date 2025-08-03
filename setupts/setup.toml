@@ -9,6 +9,7 @@
 [crossover.dnc]
     batch_size = 1024
     embedding_dim = 64
+    probability = 0.8
 [crossover.k_point]
     probability = 2
     k = 2
