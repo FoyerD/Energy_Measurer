@@ -6,7 +6,7 @@ from eckity.algorithms.simple_evolution import SimpleEvolution
 import psutil
 
 class Logger():
-    def __init__(self, columns: dict = None, dump_every: int = 100, output_path: str = "logs.csv"):
+    def __init__(self, columns: dict = None, dump_every: int = 2, output_path: str = "logs.csv"):
         self._columns = columns if columns is not None else {}
         self._log_data = []  # List to hold log entries
         self._dump_every = dump_every
@@ -27,7 +27,7 @@ class Logger():
             if self._first and os.path.exists(self._output_path):
                 with open(self._output_path, "a") as file:
                     file.write('###\n')
-            self.to_csv(self._output_path, append=self._first, header=self._first)
+            self.to_csv(self._output_path, append=not self._first, header=self._first)
             self.empty_logs()
             self._first = False
 
@@ -67,11 +67,11 @@ class Logger():
         del df
 
     def empty_logs(self):
-        self._log_data = []
+        self._log_data.clear()
     
     def log_headers(self, path: str):
         headers = list(self._columns.keys())
-        with open(path, "w") as file_obj:
+        with open(path, "a") as file_obj:
             print(",".join(headers), file=file_obj)
 
     def num_logs(self):
