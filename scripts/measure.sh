@@ -7,7 +7,7 @@ NUM_EXPS=1
 SETUP_FILE="setups/setup.toml"
 
 
-while getopts "o:" opt; do
+while getopts "o:n:s:" opt; do
   case "$opt" in
     o)
         OUT_DIR="out_files/exp_$OPTARG"

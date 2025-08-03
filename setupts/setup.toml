@@ -1,34 +1,24 @@
-exp_name = "dnc_bpp14_1024"
-
-
 [[domain]]
-    name = "bpp"
-    [[domain.args]]
-        db_path = ""
-        dataset_name = ""
-[[domain]]
-    name = "frozen_lake"
-    [[domain.args]]
+    [[domain.bpp]]
+        db_path = "datasets_dnc/hard_parsed.json"
+        dataset_name = "BPP14"
+    [[domain.frozen_lake]]
         num_games = 2000
         slippery = true
 
 
 [[crossover]]
-    name = "dnc"
-    [[crossover.args]]
+    [[crossover.dnc]]
         batch_size = 1024
         embedding_dim = 64
-[[crossover]]
-    name = "k_point"
-    [[crossover.args]]
+    [[crossover.k_point]]
         probability = 2
         k = 2
         p = 0.5
 
 
 [[mutation]]
-    name = "uniform"
-    [[mutation.args]]
+    [[mutation.uniform]]
         probability = 0.1
         arity = 1
 
