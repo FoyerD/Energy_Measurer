@@ -9,6 +9,7 @@
     batch_size = 1024
     embedding_dim = 64
     probability = 0.8
+    fitness_epsilon = 0
 [crossover.k_point]
     probability = 2
     k = 2
