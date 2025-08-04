@@ -55,6 +55,7 @@ def create_dnc_op(individual_creator:Creator,
                     epsilon_greedy: float = 0.3,
                     population_size:int = 100,
                     fitnss_epsilon: float = 0,
+                    best_of_gen_callback=None,
                     events = None,
                     loggers: list = None,
                     log_events:list = None):
@@ -69,7 +70,8 @@ def create_dnc_op(individual_creator:Creator,
         use_device='cuda' if is_available() else 'cpu',
         n_parents=n_parents,
         epsilon_greedy=epsilon_greedy,
-        fitness_epsilon=fitnss_epsilon
+        fitness_epsilon=fitnss_epsilon,
+        best_of_gen_callback=best_of_gen_callback
     )
 
     dnc_op = DeepNeuralCrossover(probability=0.8, population_size=population_size, dnc_config=dnc_config,

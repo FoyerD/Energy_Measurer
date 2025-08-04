@@ -55,8 +55,8 @@ class Logger():
         self.add_str_col("type", "GPU")
         
     def add_best_of_gen_col(self, algo: SimpleEvolution):
-        self.update_column("best_of_gen", lambda: algo.get_individual_evaluator().evaluate_individual(algo.best_of_gen) if algo.best_of_gen is not None else 0)
-    
+        #self.update_column("best_of_gen", lambda: algo.get_individual_evaluator().evaluate_individual(algo.best_of_gen) if algo.best_of_gen is not None else 0)
+        self.update_column("best_of_gen", lambda: algo.get_best_of_gen().fitness if algo.best_of_gen.fitness is not None else 0)
     def add_average_col(self, algo: SimpleEvolution):
         self.update_column("average", lambda: float(algo.get_average_fitness()[0]))
         
