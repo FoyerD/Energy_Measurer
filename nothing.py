@@ -4,7 +4,7 @@ import time
 import psutil
 
 def main(out_dir:str, measure_time:int):
-    logger = Logger()
+    logger = Logger(dump_every=100, output_path=out_dir + '/nothing.csv')
     logger.add_time_col()
     logger.add_str_col("COL", "void")
     logger.update_column("MEMORY", lambda: psutil.Process().memory_info().rss / (1024))  # Total memory in KB

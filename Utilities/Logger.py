@@ -6,7 +6,7 @@ from eckity.algorithms.simple_evolution import SimpleEvolution
 import psutil
 
 class Logger():
-    def __init__(self, columns: dict = None, dump_every: int = 2, output_path: str = "logs.csv"):
+    def __init__(self, columns: dict = None, dump_every: int = 100, output_path: str = "logs.csv"):
         self._columns = columns if columns is not None else {}
         self._log_data = []  # List to hold log entries
         self._dump_every = dump_every
