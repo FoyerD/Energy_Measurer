@@ -247,6 +247,10 @@ if __name__ == "__main__":
                     help='Maximum generation to consider in the plots')
     args = parser.parse_args()
     os.makedirs(args.out_dir, exist_ok=True)
+    path_svgs = os.path.join(args.out_dir, 'svgs')
+    path_pngs = os.path.join(args.out_dir, 'pngs')
+    os.makedirs(path_svgs, exist_ok=True)
+    os.makedirs(path_pngs, exist_ok=True)
     main(measures_file=args.measures_file,
         statistics_file=args.statistics_file,
          output_dir=args.out_dir,

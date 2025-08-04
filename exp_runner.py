@@ -63,7 +63,8 @@ def main(crossover_op_name:str, mutation_op_name:str, domain:str, output_dir:str
     mutation_args = config['mutation'][mutation_op_name]
     if(mutation_op_name == 'uniform'):
         mutation_op = EckityFactory.create_uniform_mutation(probability=mutation_args['probability'],
-                                                     arity=mutation_args['arity'])
+                                                     arity=mutation_args['arity'],
+                                                     probability_for_each=mutation_args['probability_for_each'])
     else:
         raise ValueError(f'Operator {mutation_op_name} not recognized')
 

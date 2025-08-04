@@ -1,5 +1,4 @@
 #!/bin/sh
-
 min_gen=0
 max_gen=6000
 

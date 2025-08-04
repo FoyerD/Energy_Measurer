@@ -15,9 +15,10 @@
     p = 0.5
 
 [mutation.uniform]
-    probability = 0.1
+    probability = 0.5
+    probability_for_each = 0.1
     arity = 1
 
 [evolution]
-    max_generation = 10
+    max_generation = 6000
     population_size = 100
