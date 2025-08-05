@@ -92,7 +92,7 @@ def main(crossover_op_name:str, mutation_op_name:str, domain:str, output_dir:str
     
     if(crossover_op_name == 'dnc'):
         statistics_logger.update_column("TRAINED", crossover_op.dnc_wrapper.is_trained)
-        crossover_op.dnc_wrapper.set_best_of_gen_callback(lambda: evo_algo.best_of_gen.fitness.fitness)
+        crossover_op.dnc_wrapper.set_best_of_gen_callback(lambda: evo_algo.best_of_gen.fitness.get_pure_fitness() if evo_algo.best_of_gen.fitness is not None else 0)
     else:
         statistics_logger.update_column("TRAINED", False)
 
