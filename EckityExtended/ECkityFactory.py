@@ -48,8 +48,8 @@ def create_dnc_op(individual_creator:Creator,
                   log_events:list = None,
                   **kwargs):
 
-    dnc_op = DeepNeuralCrossover(individual_evaluator=evaluator,
-                                 vector_creator=individual_creator,
+    dnc_op = DeepNeuralCrossover(vector_creator=individual_creator,
+                                 individual_evaluator=evaluator,
                                  **kwargs)
 
     if(loggers is not None and log_events is not None

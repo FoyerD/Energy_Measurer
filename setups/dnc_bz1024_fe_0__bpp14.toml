@@ -1,0 +1,25 @@
+[domain]
+    name='bpp'
+    [domain.args]
+        db_path = "datasets_dnc/hard_parsed.json"
+        dataset_name = "BPP_14"
+
+[crossover]
+    name='dnc'
+    [crossover.args]
+        probability = 0.8
+        [crossover.args.dnc_config]
+            batch_size = 1024
+            embedding_dim = 64
+            fitness_epsilon = 0
+
+[mutation]
+    name='uniform'
+    [mutation.args]
+        probability = 0.5
+        probability_for_each = 0.1
+        arity = 1
+
+[evolution]
+    max_generation = 6000
+    population_size = 100

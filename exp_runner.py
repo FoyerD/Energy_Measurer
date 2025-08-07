@@ -10,6 +10,7 @@ from Utilities.Logger import Logger
 from eckity.genetic_operators.selections.tournament_selection import TournamentSelection
 from eckity.algorithms.simple_evolution import AFTER_GENERATION_EVENT_NAME
 import tomllib
+from torch.cuda import is_available as is_cuda_aviable
 
 def main(output_dir:str, setup_file:str=None):
 
@@ -47,10 +48,12 @@ def main(output_dir:str, setup_file:str=None):
     crossover_name = config['crossover']['name']
     if(crossover_name == 'dnc'):
         config['crossover']['args']['population_size'] = evolution_args['population_size']
+        config['crossover']['args']['use_device'] = 'gpu' if is_cuda_aviable() else 'cpu'
+        
         crossover_op = EckityFactory.create_dnc_op(individual_creator=creator,
-                                                     evaluator=evaluator,
-                                                     individual_length=individual_length,
-                                                     **config['crossover']['args'])
+                                                   evaluator=evaluator,
+                                                   individual_length=individual_length,
+                                                   **config['crossover']['args'])
     elif(crossover_name == 'k_point'):
         crossover_op = EckityFactory.create_k_point_crossover(**config['crossover']['args'])
     else:
