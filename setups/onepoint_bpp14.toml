@@ -7,7 +7,7 @@
 [crossover]
     name='k_point'
     [crossover.args]
-        probability = 1
+        probability = 0.5
         k = 1
         arity = 2
 
