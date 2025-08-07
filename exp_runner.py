@@ -11,7 +11,7 @@ from eckity.genetic_operators.selections.tournament_selection import TournamentS
 from eckity.algorithms.simple_evolution import AFTER_GENERATION_EVENT_NAME
 import tomllib
 
-def main(crossover_op_name:str, mutation_op_name:str, domain:str, output_dir:str, setup_file:str=None):
+def main(output_dir:str, setup_file:str=None):
 
     with open(setup_file, 'rb') as f:
         config = tomllib.load(f)
@@ -27,46 +27,43 @@ def main(crossover_op_name:str, mutation_op_name:str, domain:str, output_dir:str
     evolution_args = config['evolution']
     
     # evaluator
-    domain_args = config['domain'][domain]
-    if(domain == 'bpp'):
-        evaluator, individual_length, min_bound, max_bound = EckityFactory.make_bpp_evaluator(db_path=domain_args['db_path'], dataset_name=domain_args['dataset_name'])
+    domain_name = config['domain']['name']
+    if(domain_name == 'bpp'):
+        evaluator, individual_length, min_bound, max_bound = EckityFactory.make_bpp_evaluator(**config['domain']['args'])
         creator = GAIntegerStringVectorCreator(length=individual_length, bounds=(min_bound, max_bound))
         higher_is_better = True
-    
-    elif(domain == 'frozen_lake'):
-        evaluator, individual_length = EckityFactory.make_frozen_lake_evaluator(slippery=domain_args.get('slippery', False), num_games=domain_args.get('num_games', 5))
+
+    elif(domain_name == 'frozen_lake'):
+        evaluator, individual_length = EckityFactory.make_frozen_lake_evaluator(**config['domain']['args'])
         creator = GAIntegerStringVectorCreator(length=individual_length, bounds=(0, 3))
         higher_is_better = True
 
     else:
-        raise ValueError(f'Domain {domain} not recognized')
-    
+        raise ValueError(f'Domain {domain_name} not recognized')
+
+
+
     # crossover operator
-    crossover_args = config['crossover'][crossover_op_name]
-    if(crossover_op_name == 'dnc'):
+    crossover_name = config['crossover']['name']
+    if(crossover_name == 'dnc'):
+        config['crossover']['args']['population_size'] = evolution_args['population_size']
         crossover_op = EckityFactory.create_dnc_op(individual_creator=creator,
                                                      evaluator=evaluator,
                                                      individual_length=individual_length,
-                                                     population_size=evolution_args['population_size'],
-                                                     embedding_dim=crossover_args['embedding_dim'],
-                                                     loggers=None,
-                                                     log_events=None,
-                                                     batch_size=crossover_args['batch_size'])
-    elif(crossover_op_name == 'k_point'):
-        crossover_op = EckityFactory.create_k_point_crossover(probability=crossover_args['probability'],
-                                                              arity=crossover_args['arity'],
-                                                              k=crossover_args['k'])
+                                                     **config['crossover']['args'])
+    elif(crossover_name == 'k_point'):
+        crossover_op = EckityFactory.create_k_point_crossover(**config['crossover']['args'])
     else:
-        raise ValueError(f'Operator {crossover_op_name} not recognized')
+        raise ValueError(f'Operator {crossover_name} not recognized')
+
+
     
     # mutation operator
-    mutation_args = config['mutation'][mutation_op_name]
-    if(mutation_op_name == 'uniform'):
-        mutation_op = EckityFactory.create_uniform_mutation(probability=mutation_args['probability'],
-                                                     arity=mutation_args['arity'],
-                                                     probability_for_each=mutation_args['probability_for_each'])
+    mutation_name = config['mutation']['name']
+    if(mutation_name == 'uniform'):
+        mutation_op = EckityFactory.create_uniform_mutation(**config['mutation']['args'])
     else:
-        raise ValueError(f'Operator {mutation_op_name} not recognized')
+        raise ValueError(f'Operator {mutation_name} not recognized')
 
     
     # Logger setup
@@ -89,8 +86,8 @@ def main(crossover_op_name:str, mutation_op_name:str, domain:str, output_dir:str
     statistics_logger.add_best_of_gen_col(evo_algo)
     statistics_logger.add_average_col(evo_algo)
     statistics_logger.add_gen_col(evo_algo)
-    
-    if(crossover_op_name == 'dnc'):
+
+    if(crossover_name == 'dnc'):
         statistics_logger.update_column("TRAINED", crossover_op.dnc_wrapper.is_trained)
         crossover_op.dnc_wrapper.set_best_of_gen_callback(lambda: evo_algo.best_of_gen.fitness.get_pure_fitness() if evo_algo.best_of_gen.fitness is not None else 0)
     else:
@@ -116,12 +113,6 @@ def main(crossover_op_name:str, mutation_op_name:str, domain:str, output_dir:str
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('crossover_op', type=str,
-                    help='The program must recive the crossover operator to be used')
-    parser.add_argument('mutation_op', type=str,
-                    help='The program must recive the mutation operator to be used')
-    parser.add_argument('domain', type=str,
-                    help='The program must recive the domain of the problem')
     parser.add_argument('-o', '--output_dir', type=str, default=None,
                     help='The program may recive the output directory to save the results')
     parser.add_argument('--setup_file', type=str, default='setup.toml',
@@ -130,8 +121,4 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
 
-    main(crossover_op_name=args.crossover_op,
-         mutation_op_name=args.mutation_op,
-         domain=args.domain,  
-         output_dir=args.output_dir,
-         setup_file=args.setup_file)
+    main(output_dir=args.output_dir, setup_file=args.setup_file)

@@ -2,14 +2,13 @@ from eckity.algorithms.simple_evolution import SimpleEvolution
 from eckity.subpopulation import Subpopulation
 import json
 import numpy as np
-from DNC_mid_train.DNC_eckity_wrapper import DeepNeuralCrossoverConfig, DeepNeuralCrossover
+from DNC_mid_train.DNC_eckity_wrapper import DeepNeuralCrossover
 from DNC_mid_train import dnc_runner_eckity
 from eckity.creators import Creator
 from eckity.evaluators import IndividualEvaluator
 from eckity.breeders import Breeder, SimpleBreeder
 from eckity.genetic_operators.crossovers.vector_k_point_crossover import VectorKPointsCrossover
 from eckity.statistics import Statistics, BestAverageWorstStatistics
-from torch.cuda import is_available
 from Utilities.Logger import Logger
 
 def get_statistics_logger():
@@ -37,44 +36,22 @@ def make_bpp_evaluator(db_path:str, dataset_name:str):
     
     return bpp_eval, ind_length, min_bound, max_bound
 
-def make_frozen_lake_evaluator(map = None, slippery: bool = True, num_games: int = 2000, ):
-    fl_eval = dnc_runner_eckity.FrozenLakeEvaluator(map=map, slippery=slippery, num_games=num_games)
-
+def make_frozen_lake_evaluator(map = None, **kwargs):
+    fl_eval = dnc_runner_eckity.FrozenLakeEvaluator(map=map, **kwargs)
     ind_length = fl_eval.get_individual_length()
     return fl_eval, ind_length
     
 
 def create_dnc_op(individual_creator:Creator,
-                    evaluator: IndividualEvaluator,
-                    individual_length:int,
-                    embedding_dim: int = 64,
-                    running_mean_decay: float = 0.95,
-                    batch_size: int = 1024,
-                    learning_rate: float = 1e-4,
-                    n_parents: int = 2,
-                    epsilon_greedy: float = 0.3,
-                    population_size:int = 100,
-                    fitnss_epsilon: float = 0,
-                    events = None,
-                    loggers: list = None,
-                    log_events:list = None):
+                  evaluator: IndividualEvaluator,
+                  loggers: list = None,
+                  log_events:list = None,
+                  **kwargs):
 
-    dnc_config = DeepNeuralCrossoverConfig(
-        embedding_dim=embedding_dim,
-        sequence_length=individual_length,
-        num_embeddings=individual_length + 1,
-        running_mean_decay=running_mean_decay,
-        batch_size=batch_size,
-        learning_rate=learning_rate,
-        use_device='cuda' if is_available() else 'cpu',
-        n_parents=n_parents,
-        epsilon_greedy=epsilon_greedy,
-        fitness_epsilon=fitnss_epsilon,
-    )
+    dnc_op = DeepNeuralCrossover(individual_evaluator=evaluator,
+                                 vector_creator=individual_creator,
+                                 **kwargs)
 
-    dnc_op = DeepNeuralCrossover(probability=0.8, population_size=population_size, dnc_config=dnc_config,
-                                individual_evaluator=evaluator, vector_creator=individual_creator, events=events)
-    
     if(loggers is not None and log_events is not None
         and len(loggers) == len(log_events)):
         for logger, log_event in zip(loggers, log_events):
@@ -82,15 +59,11 @@ def create_dnc_op(individual_creator:Creator,
     
     return dnc_op
 
-def create_k_point_crossover(
-                            probability:int=1, 
-                            arity:int=2, 
-                            k:int=1, 
-                            events=None, 
-                            loggers: list = None,
-                            log_events:list = None):
+def create_k_point_crossover(loggers: list = None,
+                             log_events:list = None,
+                             **kwargs):
     
-    op = VectorKPointsCrossover(probability=probability, k=k, arity=arity, events=events)
+    op = VectorKPointsCrossover(**kwargs)
     
     if(loggers is not None and log_events is not None
         and len(loggers) == len(log_events)):
@@ -98,10 +71,10 @@ def create_k_point_crossover(
             op.register(log_event, logger.log)
     return op
 
-def create_uniform_mutation(probability:float=0.5, arity:int=1, probability_for_each:float=0.1, events=None, 
-                            loggers: list = None,
-                            log_events:list = None):
-    op = dnc_runner_eckity.IntVectorUniformMutation(probability=probability, probability_for_each=probability_for_each, arity=arity, events=events)
+def create_uniform_mutation(loggers: list = None,
+                            log_events:list = None,
+                            **kwargs):
+    op = dnc_runner_eckity.IntVectorUniformMutation(**kwargs)
 
     if(loggers is not None and log_events is not None
         and len(loggers) == len(log_events)):
