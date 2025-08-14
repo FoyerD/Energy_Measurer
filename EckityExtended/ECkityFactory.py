@@ -59,7 +59,7 @@ def create_dnc_op(individual_creator:Creator,
     
     return dnc_op
 
-def create_k_point_crossover(loggers: list = None,
+def create_kpoint_crossover(loggers: list = None,
                              log_events:list = None,
                              **kwargs):
     

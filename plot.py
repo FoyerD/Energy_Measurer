@@ -15,7 +15,7 @@ def unzip(tuples):
     
     return a, b
 
-def subtract_per_diff(df, avg, col, time_col='seconds_passed'):
+def subtract_per_diff(df, avg, col, time_col='time'):
     df[col] -= avg * df[time_col].diff().fillna(0)
     return df 
     
@@ -69,7 +69,7 @@ def plot_dual_graph(measures_df, statistics_df, output_dir:str, markers:list, na
 
 
     # for marker in markers:
-    #     plotter.add_marker(time=marker['time'], time_col='seconds_passed', col=marker['col'], axes_n=1, db_name='statistics')
+    #     plotter.add_marker(time=marker['time'], time_col='time', col=marker['col'], axes_n=1, db_name='statistics')
     
     fig.legend(loc='upper left')
     fig.savefig(f'{output_dir}/svgs/{name}.svg')

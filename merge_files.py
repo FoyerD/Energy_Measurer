@@ -4,11 +4,13 @@ import os
 import pandas as pd
 import Utilities.DfHelper as dfh
 
-def preprocess_df(df, datetime:bool=False):
-    new_df = df.sort_values('time')
-    new_df['time'] = pd.to_datetime(new_df['time'])
-    new_df = dfh.add_seconds_passed(new_df, col='time', new_col='seconds_passed')
-    return new_df
+def preprocess_df(df):
+    df['time'] = pd.to_numeric(df['time'], errors='coerce')
+    df = df.sort_values('time')
+    df['time'] = df['time'] - df['time'].iloc[0]
+    # new_df = dfh.add_seconds_passed(new_df, col='time', new_col='time')
+    print(df.head())
+    return df
 
 def add_gen_to_df(measures_df, gen_df):
     measures_df['type'] = 'MEASURE'
@@ -21,7 +23,7 @@ def add_gen_to_df(measures_df, gen_df):
     return measure_df_split, gen_df_split
 
 
-def main(measures_dir, statistics_dir, out_dir, mdatetime:bool=False, sdatetime:bool=False, base_pkg:float=0.0, base_gpu:float=0.0):
+def main(measures_dir, statistics_dir, out_dir, base_pkg:float=0.0, base_gpu:float=0.0):
     measures = []
     statistics = []
     
@@ -36,12 +38,12 @@ def main(measures_dir, statistics_dir, out_dir, mdatetime:bool=False, sdatetime:
                 curr_df['GPU'] = (curr_df['GPU'] - base_gpu) / 1000 * 0.25
                 curr_df['PKG'] = curr_df['PKG'].cumsum()
                 curr_df['GPU'] = curr_df['GPU'].cumsum()
-                measures.append(preprocess_df(curr_df, mdatetime))
+                measures.append(preprocess_df(curr_df))
     for root, dirs, files in os.walk(statistics_dir):
         for file in files:
             if file.endswith('.csv'):
                 curr_df = pd.read_csv(os.path.join(root, file))
-                statistics.append(preprocess_df(curr_df, sdatetime))
+                statistics.append(preprocess_df(curr_df))
     
     assert len(measures) == len(statistics), "The number of measures and statistics files must be the same"
     
@@ -67,7 +69,8 @@ def main(measures_dir, statistics_dir, out_dir, mdatetime:bool=False, sdatetime:
     final_measures_df = pd.merge(final_measures_df, gpu_std, on='gen', how='left').fillna(0)
     final_measures_df = pd.merge(final_measures_df, mem_std, on='gen', how='left').fillna(0)
     final_statistics_df = pd.merge(merged_statistics_df, bog_std, on='gen', how='left').fillna(0)
-    
+
+
     final_measures_df.to_csv(os.path.join(out_dir, 'mean_measures.csv'), index=False)
     final_statistics_df.to_csv(os.path.join(out_dir, 'mean_statistics.csv'), index=False)
     
@@ -82,10 +85,6 @@ if __name__ == '__main__':
                         help='The program must recive dir containing statistics files')
     parser.add_argument('out_dir', type=str,
                         help='The program must recive the output directory to be used')
-    parser.add_argument('--mdatetime', action='store_true',
-                        help='Indcate if using datetime or timestamp')
-    parser.add_argument('--sdatetime', action='store_true',
-                        help='Indcate if using datetime or timestamp')
     parser.add_argument('--base_pkg', type=float, default=0.0,
                         help='Base PKG power in Watts')
     parser.add_argument('--base_gpu', type=float, default=0.0,
@@ -97,4 +96,4 @@ if __name__ == '__main__':
     base_pkg = args.base_pkg
     base_gpu = args.base_gpu
     os.makedirs(output_dir, exist_ok=True)
-    main(measures_dir, statistics_dir, output_dir, args.mdatetime, args.sdatetime, base_pkg, base_gpu)
+    main(measures_dir, statistics_dir, output_dir, base_pkg, base_gpu)

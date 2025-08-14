@@ -54,8 +54,8 @@ def main(output_dir:str, setup_file:str=None):
                                                    evaluator=evaluator,
                                                    individual_length=individual_length,
                                                    **config['crossover']['args'])
-    elif(crossover_name == 'k_point'):
-        crossover_op = EckityFactory.create_k_point_crossover(**config['crossover']['args'])
+    elif(crossover_name == 'kpoint'):
+        crossover_op = EckityFactory.create_kpoint_crossover(**config['crossover']['args'])
     else:
         raise ValueError(f'Operator {crossover_name} not recognized')
 
@@ -91,10 +91,10 @@ def main(output_dir:str, setup_file:str=None):
     statistics_logger.add_gen_col(evo_algo)
 
     if(crossover_name == 'dnc'):
-        statistics_logger.update_column("TRAINED", crossover_op.dnc_wrapper.is_trained)
+        statistics_logger.update_column("TRAINED", lambda: crossover_op.dnc_wrapper.is_trained)
         crossover_op.dnc_wrapper.set_best_of_gen_callback(lambda: evo_algo.best_of_gen.fitness.get_pure_fitness() if evo_algo.best_of_gen.fitness is not None else 0)
     else:
-        statistics_logger.update_column("TRAINED", False)
+        statistics_logger.update_column("TRAINED", lambda: False)
 
     # Start the experiment
     evo_algo.evolve()
@@ -105,7 +105,11 @@ def main(output_dir:str, setup_file:str=None):
         return
 
     if(os.path.exists(output_dir + f'/statistics.csv')):
-        statistics_logger.to_csv(output_dir + f'/statistics.csv', append=True, header=False)
+        header = statistics_logger._first
+        if statistics_logger._first:
+            with open(output_dir + f'/statistics.csv', "a") as file:
+                file.write('###\n')
+        statistics_logger.to_csv(output_dir + f'/statistics.csv', append=True, header=header)
     else:
         statistics_logger.to_csv(output_dir + f'/statistics.csv', append=False, header=True)
     statistics_logger.empty_logs()

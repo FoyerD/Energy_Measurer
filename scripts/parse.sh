@@ -11,4 +11,4 @@ if [ -n "$2" ]; then
 fi
 
 # Prepering the data for plotting
-python merge_files.py ./imp_outs/exp_$1/parsed_measures ./imp_outs/exp_$1/parsed_stats ./imp_outs/exp_$1 --sdatetime --base_pkg $base_pkg --base_gpu $base_gpu
+python merge_files.py ./imp_outs/exp_$1/parsed_measures ./imp_outs/exp_$1/parsed_stats ./imp_outs/exp_$1 --base_pkg $base_pkg --base_gpu $base_gpu

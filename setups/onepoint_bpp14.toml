@@ -5,7 +5,7 @@
         dataset_name = "BPP_14"
 
 [crossover]
-    name='k_point'
+    name='kpoint'
     [crossover.args]
         probability = 0.5
         k = 1
@@ -19,5 +19,5 @@
         arity = 1
 
 [evolution]
-    max_generation = 6000
+    max_generation = 50
     population_size = 100
