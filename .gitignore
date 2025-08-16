@@ -10,6 +10,7 @@ __pycache__/
 .Python
 build/
 develop-eggs/
+scripts/get_exp.sh
 dist/
 downloads/
 eggs/
