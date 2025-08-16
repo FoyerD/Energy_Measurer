@@ -235,24 +235,25 @@ def main(measures_file:str, statistics_file:str, output_dir:str, over_energy:boo
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('measures_file', type=str,
+    parser.add_argument('experiment_dir', type=str,
                     help='The program must recive the measures file to be parsed')
-    parser.add_argument('statistics_file', type=str,
-                    help='The program must recive the statistics file to be parsed')
-    parser.add_argument('out_dir', type=str,
-                    help='The program must recive the output directory to be used')
     parser.add_argument('--min_gen', type=int, default=0,
                     help='Minimum generation to consider in the plots')
     parser.add_argument('--max_gen', type=int, default=6000,
                     help='Maximum generation to consider in the plots')
     args = parser.parse_args()
-    os.makedirs(args.out_dir, exist_ok=True)
-    path_svgs = os.path.join(args.out_dir, 'svgs')
-    path_pngs = os.path.join(args.out_dir, 'pngs')
+    
+    
+    
+    
+    images_dir = os.path.join(args.experiment_dir, 'imgs')
+    path_svgs = os.path.join(images_dir, 'svgs')
+    path_pngs = os.path.join(images_dir, 'pngs')
+    os.makedirs(images_dir, exist_ok=True)
     os.makedirs(path_svgs, exist_ok=True)
     os.makedirs(path_pngs, exist_ok=True)
-    main(measures_file=args.measures_file,
-        statistics_file=args.statistics_file,
-         output_dir=args.out_dir,
+    main(measures_file=os.path.join(args.experiment_dir, 'mean_measures.csv'),
+         statistics_file=os.path.join(args.experiment_dir, 'mean_statistics.csv'),
+         output_dir=images_dir,
          min_gen=args.min_gen,
          max_gen=args.max_gen)
