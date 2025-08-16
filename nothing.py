@@ -1,4 +1,4 @@
-from Utilities.Logger import Logger
+from Logger import Logger
 import argparse
 import time
 import psutil
@@ -6,7 +6,10 @@ import psutil
 def main(out_dir:str, measure_time:int):
     logger = Logger(dump_every=100, output_path=out_dir + '/nothing.csv')
     logger.add_time_col()
-    logger.add_str_col("COL", "void")
+    logger.update_column("best_of_gen", lambda: 0)
+    logger.update_column("average", lambda: 0)
+    logger.update_column("gen", lambda: 0)
+    logger.update_column("TRAINED", lambda: False)
     logger.update_column("MEMORY", lambda: psutil.Process().memory_info().rss / (1024))  # Total memory in KB
     start_time = time.time()
     while True:

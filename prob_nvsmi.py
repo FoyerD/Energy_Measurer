@@ -1,4 +1,4 @@
-from Utilities.Logger import Logger
+from Logger import Logger
 import sys
 from time import sleep
 

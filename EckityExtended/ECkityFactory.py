@@ -9,7 +9,7 @@ from eckity.evaluators import IndividualEvaluator
 from eckity.breeders import Breeder, SimpleBreeder
 from eckity.genetic_operators.crossovers.vector_k_point_crossover import VectorKPointsCrossover
 from eckity.statistics import Statistics, BestAverageWorstStatistics
-from Utilities.Logger import Logger
+from Logger import Logger
 
 def get_statistics_logger():
     logger_statistics = Logger()
