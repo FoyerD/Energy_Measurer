@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 export PATH="/home/debian/anaconda3/envs/EM/bin/:/home/debian/repos/pinpoint/build:$PATH"  
 OUT_DIR="out_files/exp_baseline"
 mkdir -p $OUT_DIR

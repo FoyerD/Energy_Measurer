@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 export PATH="/home/foyer/.conda/envs/energy_measure/bin/:/home/debian/anaconda3/envs/EM/bin/:/home/debian/repos/pinpoint/build:$PATH"
 #source out_files/exp_num

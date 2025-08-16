@@ -6,7 +6,7 @@ from eckity.genetic_operators import GeneticOperator
 from eckity.evaluators import IndividualEvaluator
 import EckityExtended.ECkityFactory as EckityFactory
 from DNC_mid_train.DNC_eckity_wrapper import GAIntegerStringVectorCreator
-from Utilities.Logger import Logger
+from Logger import Logger
 from eckity.genetic_operators.selections.tournament_selection import TournamentSelection
 from eckity.algorithms.simple_evolution import AFTER_GENERATION_EVENT_NAME
 import tomllib
