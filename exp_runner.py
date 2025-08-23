@@ -11,7 +11,7 @@ from eckity.genetic_operators.selections.tournament_selection import TournamentS
 from eckity.algorithms.simple_evolution import AFTER_GENERATION_EVENT_NAME
 import tomllib
 from torch.cuda import is_available as is_cuda_aviable
-from exp_namer import get_name
+from DNC_mid_train.DNC_eckity_wrapper import DeepNeuralCrossoverConfig
 
 def main(output_dir:str, setup_file:str=None):
 
@@ -48,9 +48,12 @@ def main(output_dir:str, setup_file:str=None):
     # crossover operator
     crossover_name = config['crossover']['name']
     if(crossover_name == 'dnc'):
-        config['crossover']['args']['dnc_config']['population_size'] = evolution_args['population_size']
+        config['crossover']['args']['population_size'] = evolution_args['population_size']
         config['crossover']['args']['dnc_config']['use_device'] = 'gpu' if is_cuda_aviable() else 'cpu'
-        config['crossover']['args']['population_size'] = config['evolution']['population_size'] 
+        config['crossover']['args']['dnc_config']['sequence_length'] = individual_length
+        config['crossover']['args']['dnc_config']['num_embeddings'] = individual_length+ 1
+        dnc_config = DeepNeuralCrossoverConfig(**config['crossover']['args']['dnc_config'])
+        config['crossover']['args']['dnc_config'] = dnc_config
         crossover_op = EckityFactory.create_dnc_op(individual_creator=creator,
                                                    evaluator=evaluator,
                                                    **config['crossover']['args'])

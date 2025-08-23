@@ -2,13 +2,13 @@ from eckity.algorithms.simple_evolution import SimpleEvolution
 from eckity.subpopulation import Subpopulation
 import json
 import numpy as np
-from DNC_mid_train.DNC_eckity_wrapper import DeepNeuralCrossover
+from DNC_mid_train.DNC_eckity_wrapper import DeepNeuralCrossover, DeepNeuralCrossoverConfig
 from DNC_mid_train import dnc_runner_eckity
-from eckity.creators import Creator
 from eckity.evaluators import IndividualEvaluator
 from eckity.breeders import Breeder, SimpleBreeder
 from eckity.genetic_operators.crossovers.vector_k_point_crossover import VectorKPointsCrossover
 from eckity.statistics import Statistics, BestAverageWorstStatistics
+from eckity.evaluators.simple_individual_evaluator import SimpleIndividualEvaluator
 from Logger import Logger
 
 def get_statistics_logger():
@@ -42,8 +42,8 @@ def make_frozen_lake_evaluator(map = None, **kwargs):
     return fl_eval, ind_length
     
 
-def create_dnc_op(individual_creator:Creator,
-                  evaluator: IndividualEvaluator,
+def create_dnc_op(individual_creator,
+                  evaluator: SimpleIndividualEvaluator,
                   loggers: list = None,
                   log_events:list = None,
                   **kwargs):
@@ -84,7 +84,7 @@ def create_uniform_mutation(loggers: list = None,
     return op 
 
 def create_simple_evo(
-                        individual_creator:Creator,
+                        individual_creator,
                         evaluator: IndividualEvaluator,
                         operators_sequence:list,
                         selection_methods:list,
