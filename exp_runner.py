@@ -11,6 +11,7 @@ from eckity.genetic_operators.selections.tournament_selection import TournamentS
 from eckity.algorithms.simple_evolution import AFTER_GENERATION_EVENT_NAME
 import tomllib
 from torch.cuda import is_available as is_cuda_aviable
+from exp_namer import get_name
 
 def main(output_dir:str, setup_file:str=None):
 
@@ -54,6 +55,7 @@ def main(output_dir:str, setup_file:str=None):
                                                    evaluator=evaluator,
                                                    individual_length=individual_length,
                                                    **config['crossover']['args'])
+        
     elif(crossover_name == 'kpoint'):
         crossover_op = EckityFactory.create_kpoint_crossover(**config['crossover']['args'])
     else:
@@ -68,7 +70,7 @@ def main(output_dir:str, setup_file:str=None):
     else:
         raise ValueError(f'Operator {mutation_name} not recognized')
 
-    
+
     # Logger setup
     statistics_logger = Logger(output_path=os.path.join(output_dir, 'statistics.csv'))
     statistics_logger.add_time_col()

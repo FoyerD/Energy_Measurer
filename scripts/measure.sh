@@ -5,13 +5,12 @@ export PATH="/home/foyer/.conda/envs/energy_measure/bin/:/home/debian/anaconda3/
 
 OUT_DIR=""
 NUM_EXPS=1
-SETUP_FILE="setups/setup.toml"
-
+SETUP_FILE=""
 
 while getopts "o:n:s:" opt; do
   case "$opt" in
     o)
-        OUT_DIR="out_files/exp_$OPTARG"
+        OUT_DIR="$OPTARG"
         ;;
     
     n)
@@ -34,11 +33,13 @@ if [ -z "$SETUP_FILE" ]; then
 fi
 
 
+EXP_DIR=$(python exp_namer.py $SETUP_FILE 2>&1)
+OUT_DIR="$OUT_DIR/$EXP_DIR"
 
 mkdir -p $OUT_DIR
-sudo chmod a+w,a+r $OUT_DIR
+chmod a+w,a+r $OUT_DIR
 OUT_FILE=$OUT_DIR/raw.txt
 
 pinpoint -c --timestamp -r $NUM_EXPS -i 250 -e rapl:pkg,GPU -o $OUT_FILE -- python exp_runner.py --setup_file $SETUP_FILE -o $OUT_DIR
-chmod a+w,a+r $OUT_FILE
+chmod a+r $OUT_FILE
 
