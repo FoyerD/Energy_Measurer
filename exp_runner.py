@@ -48,8 +48,8 @@ def main(output_dir:str, setup_file:str=None):
     # crossover operator
     crossover_name = config['crossover']['name']
     if(crossover_name == 'dnc'):
-        config['crossover']['args']['population_size'] = evolution_args['population_size']
-        config['crossover']['args']['use_device'] = 'gpu' if is_cuda_aviable() else 'cpu'
+        config['crossover']['args']['dnc_config']['population_size'] = evolution_args['population_size']
+        config['crossover']['args']['dnc_config']['use_device'] = 'gpu' if is_cuda_aviable() else 'cpu'
         
         crossover_op = EckityFactory.create_dnc_op(individual_creator=creator,
                                                    evaluator=evaluator,
