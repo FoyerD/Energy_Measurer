@@ -9,7 +9,7 @@
     [crossover.args]
         probability = 0.5
         [crossover.args.dnc_config]
-            batch_size = 1024
+            batch_size = 2048
             embedding_dim = 64
             fitness_epsilon = 0
 

@@ -19,5 +19,5 @@
         arity = 1
 
 [evolution]
-    max_generation = 50
+    max_generation = 6000
     population_size = 100
