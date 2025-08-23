@@ -53,7 +53,6 @@ def main(output_dir:str, setup_file:str=None):
         
         crossover_op = EckityFactory.create_dnc_op(individual_creator=creator,
                                                    evaluator=evaluator,
-                                                   individual_length=individual_length,
                                                    **config['crossover']['args'])
         
     elif(crossover_name == 'kpoint'):
