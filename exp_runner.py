@@ -50,7 +50,7 @@ def main(output_dir:str, setup_file:str=None):
     if(crossover_name == 'dnc'):
         config['crossover']['args']['dnc_config']['population_size'] = evolution_args['population_size']
         config['crossover']['args']['dnc_config']['use_device'] = 'gpu' if is_cuda_aviable() else 'cpu'
-        config['crossover']['args']['population_size'] = config['ecolution']['population_size'] 
+        config['crossover']['args']['population_size'] = config['evolution']['population_size'] 
         crossover_op = EckityFactory.create_dnc_op(individual_creator=creator,
                                                    evaluator=evaluator,
                                                    **config['crossover']['args'])
