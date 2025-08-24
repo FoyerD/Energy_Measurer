@@ -3,6 +3,11 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Setups (the ones included are examples)
+setups/
+!setups/dnc.toml
+!setups/kpoint.toml
+
 # C extensions
 *.so
 
