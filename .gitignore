@@ -8,14 +8,18 @@ setups/
 !setups/dnc.toml
 !setups/kpoint.toml
 
+# Bash scripts to ignore
+scripts/get_exp.sh
+
+
 # C extensions
 *.so
+
 
 # Distribution / packaging
 .Python
 build/
 develop-eggs/
-scripts/get_exp.sh
 dist/
 downloads/
 eggs/
