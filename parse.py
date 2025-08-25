@@ -73,7 +73,7 @@ def merge_files(measures_dir, statistics_dir, out_dir, base_pkg:float=0.0, base_
     for root, dirs, files in os.walk(measures_dir):
         for file in files:
             curr_df = pd.read_csv(os.path.join(root, file))
-            curr_df['PKG'] = ((curr_df['PKG'] - base_pkg) / 1000) * 0.25
+            curr_df['PKG'] = ((curr_df['PKG'] - base_pkg) / 1000)
             curr_df['GPU'] = ((curr_df['GPU'] - base_gpu) / 1000) * 0.25
             curr_df['PKG'] = curr_df['PKG'].cumsum()
             curr_df['GPU'] = curr_df['GPU'].cumsum()

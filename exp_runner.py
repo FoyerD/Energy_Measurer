@@ -51,7 +51,7 @@ def main(output_dir:str, setup_file:str=None):
         config['crossover']['args']['population_size'] = evolution_args['population_size']
         config['crossover']['args']['dnc_config']['use_device'] = 'cuda' if is_cuda_aviable() else 'cpu'
         config['crossover']['args']['dnc_config']['sequence_length'] = individual_length
-        config['crossover']['args']['dnc_config']['num_embeddings'] = individual_length+ 1
+        config['crossover']['args']['dnc_config']['num_embeddings'] = individual_length + 1
 
         dnc_config = DeepNeuralCrossoverConfig(**config['crossover']['args']['dnc_config'])
         config['crossover']['args']['dnc_config'] = dnc_config

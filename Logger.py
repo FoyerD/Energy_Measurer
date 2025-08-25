@@ -66,7 +66,6 @@ class Logger():
             df.to_csv(path, index=False, mode='a', header=header)
         else:
             df.to_csv(path, index=False, header=header)
-        del df
 
     def empty_logs(self):
         self._log_data.clear()
