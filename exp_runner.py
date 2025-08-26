@@ -93,7 +93,6 @@ def main(output_dir:str, setup_file:str=None):
                                                            log_events=[AFTER_GENERATION_EVENT_NAME])
     
     statistics_logger.add_best_of_gen_col(evo_algo)
-    statistics_logger.add_average_col(evo_algo)
     statistics_logger.add_gen_col(evo_algo)
 
     if(crossover_name == 'dnc'):
