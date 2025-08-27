@@ -44,6 +44,6 @@ cp $SETUP_FILE $OUT_DIR
 
 OUT_FILE=$OUT_DIR/raw.txt
 
-pinpoint -c --timestamp -r $NUM_EXPS -i 250 -e rapl:pkg,GPU -o $OUT_FILE -- python exp_runner.py --setup_file $SETUP_FILE -o $OUT_DIR
+pinpoint -c --timestamp -r $NUM_EXPS -e rapl:pkg,GPU -o $OUT_FILE -- python exp_runner.py --setup_file $SETUP_FILE -o $OUT_DIR
 chmod a+r $OUT_FILE
 
