@@ -12,6 +12,8 @@
             batch_size = 2048
             embedding_dim = 64
             fitness_epsilon = 0
+			learning_rate=1e-3
+			epsilon_greedy=0.2
 
 [mutation]
     name='uniform'
