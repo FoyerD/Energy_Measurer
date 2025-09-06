@@ -1,7 +1,6 @@
 #!/bin/sh
 
 export PATH="/home/foyer/.conda/envs/energy_measure/bin/:/home/debian/anaconda3/envs/EM/bin/:/home/debian/repos/pinpoint/build:$PATH"
-#source out_files/exp_num
 
 OUT_DIR=""
 NUM_EXPS=1
@@ -44,6 +43,7 @@ cp $SETUP_FILE $OUT_DIR
 
 OUT_FILE=$OUT_DIR/raw.txt
 
+which python
 pinpoint -c --timestamp -r $NUM_EXPS -e rapl:pkg,GPU -o $OUT_FILE -- python exp_runner.py --setup_file $SETUP_FILE -o $OUT_DIR
 chmod a+r $OUT_FILE
 
