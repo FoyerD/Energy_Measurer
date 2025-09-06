@@ -73,7 +73,7 @@ class Logger():
     def log_headers(self, path: str):
         headers = list(self._columns.keys())
         with open(path, "a") as file_obj:
-            file_obj.write(",".join(headers))
+            file_obj.write(f"{','.join(headers)}\n")
 
     def num_logs(self):
         return len(self._log_data)
