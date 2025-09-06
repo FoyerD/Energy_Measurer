@@ -81,12 +81,9 @@ class Logger():
     def get_df(self):
         return pd.DataFrame(self._log_data)
     
-    def add_memory_col(self, units:str, process: psutil.Process = None):
+    def add_memory_col(self, units: str, process: psutil.Process | None = None):
         if process is None:
             process = psutil.Process()
-        if units == 'KB':
-            self.update_column("MEMORY", lambda: process.memory_info().rss / (1024))
-        elif units == 'MB':
-            self.update_column("MEMORY", lambda: process.memory_info().rss / (1024 ** 2))
-        elif units == 'GB':
-            self.update_column("MEMORY", lambda: process.memory_info().rss / (1024 ** 3))
+
+        units_dict = {'KB': 1024, 'MB': 1024 ** 2, 'GB': 1024 ** 3}
+        self.update_column("MEMORY", lambda: process.memory_info().rss / units_dict[units] if units in units_dict else 1024)
