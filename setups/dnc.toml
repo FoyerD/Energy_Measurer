@@ -11,6 +11,7 @@
         [crossover.args.dnc_config]
             batch_size = 2048
             fitness_epsilon = 0
+		embedding_dim = 32
 
 [mutation]
     name='uniform'
