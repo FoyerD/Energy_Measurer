@@ -30,9 +30,19 @@ if [ -z "$SETUP_FILE" ]; then
         echo "Setup file not specified. Use -s <setup_file>."
         exit 1
 fi
+if [ ! -f "$SETUP_FILE" ]; then
+		echo "Setup file does not exist"
+		exit1
+if
 
 
-EXP_DIR=$(python exp_namer.py $SETUP_FILE 2>&1)
+EXP_DIR=$(python exp_namer.py $SETUP_FILE)
+status=$?
+if [ $status -ne 0 ]; then
+    echo "Naming of exp dir failed with exit code $status"
+	exit 1
+fi
+
 OUT_DIR="$OUT_DIR/$EXP_DIR"
 
 mkdir -p $OUT_DIR
