@@ -33,7 +33,7 @@ fi
 if [ ! -f "$SETUP_FILE" ]; then
 		echo "Setup file does not exist"
 		exit1
-if
+fi
 
 
 EXP_DIR=$(python exp_namer.py $SETUP_FILE)
@@ -44,16 +44,12 @@ if [ $status -ne 0 ]; then
 fi
 
 OUT_DIR="$OUT_DIR/$EXP_DIR"
+OUT_FILE=$OUT_DIR/raw.txt
 
 mkdir -p $OUT_DIR
 chmod a+w,a+r $OUT_DIR
 cp $SETUP_FILE $OUT_DIR
 
-
-
-OUT_FILE=$OUT_DIR/raw.txt
-
 which python
 pinpoint -c --timestamp -r $NUM_EXPS -e rapl:pkg,GPU -o $OUT_FILE -- python exp_runner.py --setup_file $SETUP_FILE -o $OUT_DIR
 chmod a+r $OUT_FILE
-
