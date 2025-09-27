@@ -5,8 +5,10 @@ export PATH="/home/foyer/.conda/envs/energy_measure/bin/:/home/debian/anaconda3/
 OUT_DIR=""
 NUM_EXPS=1
 SETUP_FILE=""
+SETUP_COMMAND=cp
 
-while getopts "o:n:s:" opt; do
+
+while getopts "o:n:s:r" opt; do
   case "$opt" in
     o)
         OUT_DIR="$OPTARG"
@@ -19,6 +21,8 @@ while getopts "o:n:s:" opt; do
     s)
         SETUP_FILE=$OPTARG
         ;;
+	r)
+		SETUP_COMMAND=mv
   esac
 done
 
@@ -48,8 +52,9 @@ OUT_FILE=$OUT_DIR/raw.txt
 
 mkdir -p $OUT_DIR
 chmod a+w,a+r $OUT_DIR
-cp $SETUP_FILE $OUT_DIR
 
 which python
 pinpoint -c --timestamp -r $NUM_EXPS -e rapl:pkg,GPU -o $OUT_FILE -- python exp_runner.py --setup_file $SETUP_FILE -o $OUT_DIR
+
+$SETUP_COMMAND $SETUP_FILE $OUT_DIR
 chmod a+r $OUT_FILE
