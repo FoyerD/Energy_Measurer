@@ -4,7 +4,7 @@ from eckity.algorithms.simple_evolution import SimpleEvolution
 from eckity.creators import Creator
 from eckity.genetic_operators import GeneticOperator
 from eckity.evaluators import IndividualEvaluator
-import EckityExtended.ECkityFactory as EckityFactory
+import ECkityFactory as EckityFactory
 from DNC_mid_train.DNC_eckity_wrapper import GAIntegerStringVectorCreator
 from Logger import Logger
 from eckity.genetic_operators.selections.tournament_selection import TournamentSelection
