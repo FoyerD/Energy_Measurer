@@ -10,19 +10,20 @@ SETUP_COMMAND=cp
 
 while getopts "o:n:s:r" opt; do
   case "$opt" in
-    o)
-        OUT_DIR="$OPTARG"
-        ;;
+	o)
+		OUT_DIR="$OPTARG"
+		;;
     
-    n)
-        NUM_EXPS=$OPTARG
-        ;;
+	n)
+		NUM_EXPS=$OPTARG
+		;;
     
-    s)
-        SETUP_FILE=$OPTARG
-        ;;
+	s)
+		SETUP_FILE=$OPTARG
+		;;
 	r)
 		SETUP_COMMAND=mv
+		;;
   esac
 done
 
