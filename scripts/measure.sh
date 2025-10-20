@@ -55,7 +55,8 @@ mkdir -p $OUT_DIR
 chmod a+w,a+r $OUT_DIR
 
 which python
-$SETUP_COMMAND $SETUP_FILE $OUT_DIR
 pinpoint -c --timestamp -r $NUM_EXPS -e rapl:pkg,GPU -o $OUT_FILE -- python exp_runner.py --setup_file $SETUP_FILE -o $OUT_DIR
+
+$SETUP_COMMAND $SETUP_FILE $OUT_DIR
 
 chmod a+r $OUT_FILE
