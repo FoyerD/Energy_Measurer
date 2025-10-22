@@ -26,10 +26,10 @@ def plot_dual_graph(measures_df, statistics_df, output_dir:str, markers:list, na
     axes = [ax1, ax1.twinx()]    
     
     axes[0].set_title('Energy Consumption')
-    axes[0].set_ylabel('Jouls')
+    axes[0].set_ylabel('Joules')
     axes[1].set_ylabel('Fitness')
     
-    axes[0].plot(measures_df['gen'], measures_df['PKG'], color='red', label='PKG Jouls')
+    axes[0].plot(measures_df['gen'], measures_df['PKG'], color='red', label='PKG Joules')
     axes[0].fill_between(
         measures_df['gen'],
         measures_df['PKG'] - measures_df['PKG_std'],
@@ -37,7 +37,7 @@ def plot_dual_graph(measures_df, statistics_df, output_dir:str, markers:list, na
         color='red', alpha=0.2
     )
 
-    axes[0].plot(measures_df['gen'], measures_df['GPU'], color='blue', label='GPU Jouls')
+    axes[0].plot(measures_df['gen'], measures_df['GPU'], color='blue', label='GPU Joules')
     axes[0].fill_between(
         measures_df['gen'],
         measures_df['GPU'] - measures_df['GPU_std'],
@@ -46,7 +46,7 @@ def plot_dual_graph(measures_df, statistics_df, output_dir:str, markers:list, na
     )
     
     
-    axes[0].plot(measures_df['gen'], measures_df['TOTAL'], color='purple', label='GPU Jouls')
+    axes[0].plot(measures_df['gen'], measures_df['TOTAL'], color='purple', label='GPU Joules')
     axes[0].fill_between(
         measures_df['gen'],
         measures_df['GPU'] - measures_df['GPU_std'],
@@ -120,7 +120,7 @@ def plot_memory_over_gen(measures_df, statistics_df, output_dir: str, name:str='
     plt.savefig(f'{output_dir}/pngs/{name}.png')
     plt.close()
 
-def plot_statistics_over_total(measures_df, statistics_df, output_dir: str, markers, name:str='statistics_over_jouls'):
+def plot_statistics_over_total(measures_df, statistics_df, output_dir: str, markers, name:str='statistics_over_joules'):
     # Ensure TOTAL is available
     measures_df['TOTAL'] = measures_df['PKG'] + measures_df['GPU']
     
@@ -167,7 +167,7 @@ def plot_statistics_over_total(measures_df, statistics_df, output_dir: str, mark
     plt.close()
 
 
-def plot_memory_over_jouls(measures_df, statistics_df, output_dir: str, name:str='memory_over_jouls'):
+def plot_memory_over_joules(measures_df, statistics_df, output_dir: str, name:str='memory_over_joules'):
     # Ensure TOTAL is available
     measures_df['TOTAL'] = measures_df['PKG'] + measures_df['GPU']
     
@@ -225,8 +225,8 @@ def main(measures_file:str, statistics_file:str, output_dir:str, over_energy:boo
             # {'time': 60*15, 'col': 'best_of_gen'},
             # {'time': 60*20, 'col': 'best_of_gen'},
         ]
-    plot_statistics_over_total(measures_df, statistics_df, output_dir, markers=markers, name=f'statistics_over_jouls_{min_gen}_to_{max_gen}')
-    plot_memory_over_jouls(measures_df, statistics_df, output_dir, name=f'memory_over_jouls_{min_gen}_to_{max_gen}')
+    plot_statistics_over_total(measures_df, statistics_df, output_dir, markers=markers, name=f'statistics_over_joules_{min_gen}_to_{max_gen}')
+    plot_memory_over_joules(measures_df, statistics_df, output_dir, name=f'memory_over_joules_{min_gen}_to_{max_gen}')
     plot_memory_over_gen(measures_df, statistics_df, output_dir, name=f'memory_over_gen_{min_gen}_to_{max_gen}')
     plot_dual_graph(measures_df, statistics_df, output_dir, markers=markers, name=f'dual_over_gen_{min_gen}_to_{max_gen}')
     
