@@ -63,7 +63,7 @@ def plot_dual_graph(measures_df, statistics_df, output_dir:str, markers:list, na
         color='green', alpha=0.2
     )
 
-    points = statistics_df.loc[statistics_df['TRAINED'] == True, 'gen']
+    points = statistics_df.loc[statistics_df['TRAINED'] > 0.0, 'gen']
     for total_val in points:
         axes[0].axvline(x=total_val, color='blue', linestyle='--', alpha=0.5)
 
@@ -106,7 +106,7 @@ def plot_memory_over_gen(measures_df, statistics_df, output_dir: str, name:str='
             label='Std Dev'
         )
     
-    trained_points = merged_df.loc[merged_df['TRAINED'] == 1.0, 'gen']
+    trained_points = merged_df.loc[merged_df['TRAINED'] > 0.0, 'gen']
     for gen_val in trained_points:
         plt.axvline(x=gen_val, color='blue', linestyle='--', alpha=0.5)
     
@@ -151,7 +151,7 @@ def plot_statistics_over_total(measures_df, statistics_df, output_dir: str, mark
             label='Std Dev'
         )
     
-    trained_points = merged_df.loc[merged_df['TRAINED'] == 1.0, 'TOTAL']
+    trained_points = merged_df.loc[merged_df['TRAINED'] > 0.0, 'TOTAL']
     for total_val in trained_points:
         plt.axvline(x=total_val, color='blue', linestyle='--', alpha=0.5)
     
@@ -197,7 +197,7 @@ def plot_memory_over_joules(measures_df, statistics_df, output_dir: str, name:st
             label='Std Dev'
         )
     
-    trained_points = merged_df.loc[merged_df['TRAINED'] == True, 'TOTAL']
+    trained_points = merged_df.loc[merged_df['TRAINED'] > 0, 'TOTAL']
     for total_val in trained_points:
         plt.axvline(x=total_val, color='blue', linestyle='--', alpha=0.5)
     
