@@ -19,6 +19,10 @@ def subtract_per_diff(df, avg, col, time_col='time'):
     df[col] -= avg * df[time_col].diff().fillna(0)
     return df 
     
+def add_trained_markers(df: pd.DataFrame, x_col: str, ax):
+    trained_points = df.loc[df['TRAINED'] > 0, [x_col, 'TRAINED']]
+    for _, row in trained_points.iterrows():
+        ax.axvline(x=row[x_col], color='blue', linestyle='--', alpha=row['TRAINED'])
 
 def plot_dual_graph(measures_df, statistics_df, output_dir:str, markers:list, name:str='dual_plot'):
     measures_df['TOTAL'] = measures_df['PKG'] + measures_df['GPU']
@@ -63,9 +67,10 @@ def plot_dual_graph(measures_df, statistics_df, output_dir:str, markers:list, na
         color='green', alpha=0.2
     )
 
-    points = statistics_df.loc[statistics_df['TRAINED'] > 0.0, 'gen']
-    for total_val in points:
-        axes[0].axvline(x=total_val, color='blue', linestyle='--', alpha=0.5)
+    # points = statistics_df.loc[statistics_df['TRAINED'] > 0.0, 'gen']
+    # for total_val in points:
+    #    axes[0].axvline(x=total_val, color='blue', linestyle='--', alpha=0.5)
+    add_trained_markers(statistics_df, 'gen', axes[0])
 
 
     # for marker in markers:
@@ -106,9 +111,10 @@ def plot_memory_over_gen(measures_df, statistics_df, output_dir: str, name:str='
             label='Std Dev'
         )
     
-    trained_points = merged_df.loc[merged_df['TRAINED'] > 0.0, 'gen']
-    for gen_val in trained_points:
-        plt.axvline(x=gen_val, color='blue', linestyle='--', alpha=0.5)
+    # trained_points = merged_df.loc[merged_df['TRAINED'] > 0.0, 'gen']
+    # for gen_val in trained_points:
+    #    plt.axvline(x=gen_val, color='blue', linestyle='--', alpha=0.5)
+    add_trained_markers(merged_df, 'gen', plt)
     
     plt.xlabel('Generation')
     plt.ylabel('Memory Usage (KB)')
@@ -151,10 +157,10 @@ def plot_statistics_over_total(measures_df, statistics_df, output_dir: str, mark
             label='Std Dev'
         )
     
-    trained_points = merged_df.loc[merged_df['TRAINED'] > 0.0, 'TOTAL']
-    for total_val in trained_points:
-        plt.axvline(x=total_val, color='blue', linestyle='--', alpha=0.5)
-    
+    # trained_points = merged_df.loc[merged_df['TRAINED'] > 0.0, 'TOTAL']
+    # for total_val in trained_points:
+    #     plt.axvline(x=total_val, color='blue', linestyle='--', alpha=0.5)
+    add_trained_markers(merged_df, 'TOTAL', plt) 
     
     plt.xlabel('TOTAL Energy (Joules)')
     plt.ylabel('Best of Gen Fitness')
@@ -197,10 +203,11 @@ def plot_memory_over_joules(measures_df, statistics_df, output_dir: str, name:st
             label='Std Dev'
         )
     
-    trained_points = merged_df.loc[merged_df['TRAINED'] > 0, 'TOTAL']
-    for total_val in trained_points:
-        plt.axvline(x=total_val, color='blue', linestyle='--', alpha=0.5)
-    
+    # trained_points = merged_df.loc[merged_df['TRAINED'] > 0, 'TOTAL']
+    # for total_val in trained_points:
+    #     plt.axvline(x=total_val, color='blue', linestyle='--', alpha=0.5)
+    add_trained_markers(merged_df, 'TOTAL', plt)
+
     plt.xlabel('TOTAL Energy (Joules)')
     plt.ylabel('Memory Usage (KB)')
     plt.title('Memory Usage vs Total Energy Consumed')
