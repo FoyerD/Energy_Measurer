@@ -62,6 +62,23 @@ def parse_statistics(statistics_file:str, output_dir:str):
         
         print(f"Wrote {os.path.join(output_dir, f'statistics_{i}.csv')}")
 
+def group_df(df: pd.DataFrame, key_col: str):
+    # Separate columns by type
+    
+    df['TRAINED'] = df['TRAINED'].astype(bool)
+    bool_cols = df.select_dtypes(bool).columns.tolist()
+    other_cols = [c for c in df.columns if c not in bool_cols + [key_col]]
+    
+    print(f"bool_cols: {bool_cols}")
+    print(f"other_cols: {other_cols}")
+
+    # Build aggregation dictionary
+    agg_dict = {col: list for col in bool_cols}
+    agg_dict.update({col: 'mean' for col in other_cols})
+    
+    # Aggregate
+    merged_measures_df = df.groupby('gen', as_index=False).agg(agg_dict)
+    return merged_measures_df
 
 def merge_files(measures_dir, statistics_dir, out_dir, base_pkg:float=0.0, base_gpu:float=0.0):
     measures = []
@@ -69,7 +86,9 @@ def merge_files(measures_dir, statistics_dir, out_dir, base_pkg:float=0.0, base_
     
     gened_measures = []
     gened_statistics = []
+
     
+    # collecting measures dataframes
     for root, dirs, files in os.walk(measures_dir):
         for file in files:
             curr_df = pd.read_csv(os.path.join(root, file))
@@ -78,25 +97,30 @@ def merge_files(measures_dir, statistics_dir, out_dir, base_pkg:float=0.0, base_
             curr_df['PKG'] = curr_df['PKG'].cumsum()
             curr_df['GPU'] = curr_df['GPU'].cumsum()
             measures.append(preprocess_df(curr_df))
+
+    # collecting statistics dataframes
     for root, dirs, files in os.walk(statistics_dir):
         for file in files:
             curr_df = pd.read_csv(os.path.join(root, file))
             statistics.append(preprocess_df(curr_df))
     
-    assert len(measures) == len(statistics), "The number of measures and statistics files must be the same"
+    if len(measures) != len(statistics):
+            raise RuntimeError("The number of measures and statistics files must be the same")
     
     
     
+    # adding gen column to each measures df based on corresponding statistics df
     for measure_df, statistics_df in zip(measures, statistics):
         gened_measures_df, gened_statistics_df = add_gen_to_df(measure_df, statistics_df)
         gened_measures.append(gened_measures_df)
         gened_statistics.append(gened_statistics_df)
         
+    # concating
     all_measures_df = pd.concat(gened_measures).reset_index(drop=True)
     all_statistics_df = pd.concat(gened_statistics).reset_index(drop=True)
-    print(all_statistics_df.head()['best_of_gen'])
     all_statistics_df['best_of_gen'] = all_statistics_df['best_of_gen'].astype(float)
 
+    # getting the std of columns
     measures_value_stds = {'PKG': 0, 'GPU': 0, 'MEMORY': 0}
     statistics_value_stds = {'best_of_gen': 0}
 
@@ -108,13 +132,34 @@ def merge_files(measures_dir, statistics_dir, out_dir, base_pkg:float=0.0, base_
         statistics_value_stds[col] = all_statistics_df.groupby('gen')[col].std().reset_index().fillna(0)
         statistics_value_stds[col].columns = ['gen', f'{col}_std']
 
-    merged_measures_df = all_measures_df.groupby('gen').mean().reset_index()
-    merged_statistics_df = all_statistics_df.groupby('gen').mean().reset_index()
+    # merging
+    merged_measures_df = group_df(all_measures_df, 'gen').reset_index()
+    merged_statistics_df = group_df(all_statistics_df, 'gen').reset_index()
 
-    final_measures_df = pd.merge(merged_measures_df, measures_value_stds['PKG'], on='gen', how='left').fillna(0)
-    final_measures_df = pd.merge(final_measures_df, measures_value_stds['GPU'], on='gen', how='left').fillna(0)
-    final_measures_df = pd.merge(final_measures_df, measures_value_stds['MEMORY'], on='gen', how='left').fillna(0)
-    final_statistics_df = pd.merge(merged_statistics_df, statistics_value_stds['best_of_gen'], on='gen', how='left').fillna(0)
+    final_measures_df = pd.merge(
+            merged_measures_df,
+            measures_value_stds['PKG'],
+            on='gen',
+            how='left'
+            ).fillna(0)
+    final_measures_df = pd.merge(
+            final_measures_df,
+            measures_value_stds['GPU'],
+            on='gen',
+            how='left'
+            ).fillna(0)
+    final_measures_df = pd.merge(
+            final_measures_df,
+            measures_value_stds['MEMORY'],
+            on='gen',
+            how='left'
+            ).fillna(0)
+    final_statistics_df = pd.merge(
+            merged_statistics_df,
+            statistics_value_stds['best_of_gen'],
+            on='gen',
+            how='left'
+            ).fillna(0)
 
 
     final_measures_df.to_csv(os.path.join(out_dir, 'mean_measures.csv'), index=False)
