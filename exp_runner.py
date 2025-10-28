@@ -41,6 +41,7 @@ def main(output_dir:str, setup_file:str=None):
         higher_is_better = True
 
     elif(domain_name == 'graph_coloring'):
+        higher_is_better = False
         evaluator, individual_length = EckityFactory.make_gc_evaluator(**config['domain']['args'])
 
     else:
@@ -55,6 +56,7 @@ def main(output_dir:str, setup_file:str=None):
         config['crossover']['args']['dnc_config']['use_device'] = 'cuda' if is_cuda_aviable() else 'cpu'
         config['crossover']['args']['dnc_config']['sequence_length'] = individual_length
         config['crossover']['args']['dnc_config']['num_embeddings'] = individual_length + 1
+        config['crossover']['args']['dnc_config']['higher_is_better'] = higher_is_better
 
         dnc_config = DeepNeuralCrossoverConfig(**config['crossover']['args']['dnc_config'])
         config['crossover']['args']['dnc_config'] = dnc_config
