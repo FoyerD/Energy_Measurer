@@ -75,7 +75,8 @@ def get_gc_graph(graph_path: str):
 
 def make_gc_evaluator(graph_path: str):
     G = get_gc_graph(graph_path)
-    return dnc_runner_eckity.GraphColoringEvaluator(G), len(G.nodes())
+    num_nodes = len(G.nodes())
+    return dnc_runner_eckity.GraphColoringEvaluator(G), num_nodes, 0, num_nodes
 
 def make_frozen_lake_evaluator(map = None, **kwargs):
     fl_eval = dnc_runner_eckity.FrozenLakeEvaluator(map=map, **kwargs)
