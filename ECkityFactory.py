@@ -10,6 +10,7 @@ from eckity.genetic_operators.crossovers.vector_k_point_crossover import VectorK
 from eckity.statistics import Statistics, BestAverageWorstStatistics
 from eckity.evaluators.simple_individual_evaluator import SimpleIndividualEvaluator
 from Logger import Logger
+import networkx as nx
 
 def get_statistics_logger():
     logger_statistics = Logger()
@@ -35,6 +36,46 @@ def make_bpp_evaluator(db_path:str, dataset_name:str):
                                 bin_capacity=dataset_bin_capacity, fitness_dict=fitness_dict)
     
     return bpp_eval, ind_length, min_bound, max_bound
+
+def get_gc_graph(graph_path: str):
+    """
+    Parse a DIMACS-format graph coloring instance (.col or .col)
+    into a NetworkX graph.
+
+    Parameters
+    ----------
+    path : str
+        Path to the DIMACS file (.col or compressed .col).
+
+    Returns
+    -------
+    nx.Graph
+        Undirected graph with integer node indices starting at 0.
+    """
+    # Handle compressed or regular file transparently
+    G = nx.Graph()
+
+    with open(graph_path, "rt") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("c"):
+                continue  # skip comments
+            if line.startswith("p"):
+                # Example: "p edge 5 7"
+                parts = line.split()
+                n_nodes = int(parts[2])
+                G.add_nodes_from(range(n_nodes))  # create all nodes (0-based)
+            elif line.startswith("e"):
+                # Example: "e 1 2"
+                _, u, v = line.split()
+                # DIMACS uses 1-based indexing → convert to 0-based
+                G.add_edge(int(u) - 1, int(v) - 1)
+    return G
+    
+
+def make_gc_evaluator(graph_path: str):
+    G = get_gc_graph(graph_path)
+    return dnc_runner_eckity.GraphColoringEvaluator(G)
 
 def make_frozen_lake_evaluator(map = None, **kwargs):
     fl_eval = dnc_runner_eckity.FrozenLakeEvaluator(map=map, **kwargs)
