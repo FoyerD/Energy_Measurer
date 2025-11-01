@@ -25,20 +25,20 @@ def subtract_per_diff(df, avg, col, time_col='time'):
 #     for _, row in trained_points.iterrows():
 #         ax.axvline(x=row[x_col], color='blue', linestyle='--', alpha=row['TRAINED'])
 
-def add_trained_markers(df: pd.DataFrame, x_col: str, ax):
+def add_trained_markers(df: pd.DataFrame, x_col: str, ax, num_exps_to_plot: int = inf):
     # Assume each df['TRAINED'] is a list of same length
     n_experiments = len(df.iloc[0]['TRAINED'])
     print(type(df.iloc[0]['TRAINED']))
     cmap = plt.cm.get_cmap('tab10', n_experiments)  # or use another colormap
     
-    for i in range(n_experiments):
+    for i in range(min(n_experiments, num_exps_to_plot)):
         color = cmap(i)
         # get x values where this experiment was trained (True)
         trained_xs = df.loc[df['TRAINED'].apply(lambda lst: lst[i]), x_col]
         for x in trained_xs:
             ax.axvline(x=x, color=color, linestyle='--', alpha=0.5)
 
-def plot_dual_graph(measures_df, statistics_df, output_dir:str, markers:list, name:str='dual_plot'):
+def plot_dual_graph(measures_df, statistics_df, output_dir:str, markers:list, name:str='dual_plot', num_exps_to_plot: int = inf):
     measures_df['TOTAL'] = measures_df['PKG'] + measures_df['GPU']
     fig, ax1 = plt.subplots(figsize=(10, 6))
     axes = [ax1, ax1.twinx()]    
@@ -81,7 +81,7 @@ def plot_dual_graph(measures_df, statistics_df, output_dir:str, markers:list, na
         color='green', alpha=0.2
     )
 
-    add_trained_markers(statistics_df, 'gen', axes[0])
+    add_trained_markers(statistics_df, 'gen', axes[0], num_exps_to_plot)
 
 
     # for marker in markers:
@@ -92,7 +92,7 @@ def plot_dual_graph(measures_df, statistics_df, output_dir:str, markers:list, na
     fig.savefig(f'{output_dir}/pngs/{name}.png')
 
 
-def plot_memory_over_gen(measures_df, statistics_df, output_dir: str, name:str='memory_over_gen'):
+def plot_memory_over_gen(measures_df, statistics_df, output_dir: str, name:str='memory_over_gen', num_exps_to_plot: int = inf):
     # Ensure TOTAL is available
     measures_df['TOTAL'] = measures_df['PKG'] + measures_df['GPU']
     
@@ -122,7 +122,7 @@ def plot_memory_over_gen(measures_df, statistics_df, output_dir: str, name:str='
             label='Std Dev'
         )
     
-    add_trained_markers(merged_df, 'gen', plt)
+    add_trained_markers(merged_df, 'gen', plt, num_exps_to_plot)
     
     plt.xlabel('Generation')
     plt.ylabel('Memory Usage (KB)')
@@ -134,7 +134,7 @@ def plot_memory_over_gen(measures_df, statistics_df, output_dir: str, name:str='
     plt.savefig(f'{output_dir}/pngs/{name}.png')
     plt.close()
 
-def plot_statistics_over_total(measures_df, statistics_df, output_dir: str, markers, name:str='statistics_over_joules'):
+def plot_statistics_over_total(measures_df, statistics_df, output_dir: str, markers, name:str='statistics_over_joules', num_exps_to_plot: int = inf):
     # Ensure TOTAL is available
     measures_df['TOTAL'] = measures_df['PKG'] + measures_df['GPU']
     
@@ -166,7 +166,7 @@ def plot_statistics_over_total(measures_df, statistics_df, output_dir: str, mark
             label='Std Dev'
         )
     
-    add_trained_markers(merged_df, 'TOTAL', plt) 
+    add_trained_markers(merged_df, 'TOTAL', plt, num_exps_to_plot) 
     
     plt.xlabel('TOTAL Energy (Joules)')
     plt.ylabel('Best of Gen Fitness')
@@ -179,7 +179,7 @@ def plot_statistics_over_total(measures_df, statistics_df, output_dir: str, mark
     plt.close()
 
 
-def plot_memory_over_joules(measures_df, statistics_df, output_dir: str, name:str='memory_over_joules'):
+def plot_memory_over_joules(measures_df, statistics_df, output_dir: str, name:str='memory_over_joules', num_exps_to_plot: int = inf):
     # Ensure TOTAL is available
     measures_df['TOTAL'] = measures_df['PKG'] + measures_df['GPU']
     
@@ -209,7 +209,7 @@ def plot_memory_over_joules(measures_df, statistics_df, output_dir: str, name:st
             label='Std Dev'
         )
     
-    add_trained_markers(merged_df, 'TOTAL', plt)
+    add_trained_markers(merged_df, 'TOTAL', plt, num_exps_to_plot)
 
     plt.xlabel('TOTAL Energy (Joules)')
     plt.ylabel('Memory Usage (KB)')
@@ -221,7 +221,7 @@ def plot_memory_over_joules(measures_df, statistics_df, output_dir: str, name:st
     plt.savefig(f'{output_dir}/pngs/{name}.png')
     plt.close()
 
-def main(measures_file:str, statistics_file:str, output_dir:str, over_energy:bool=False, min_gen:int=-inf, max_gen:int=inf):
+def main(measures_file:str, statistics_file:str, output_dir:str, num_exps_to_plot: int, min_gen:int=-inf, max_gen:int=inf):
     measures_df = pd.read_csv(measures_file)
     statistics_df = pd.read_csv(statistics_file)
     statistics_df = statistics_df[statistics_df['best_of_gen'] > 0]
@@ -237,10 +237,10 @@ def main(measures_file:str, statistics_file:str, output_dir:str, over_energy:boo
             # {'time': 60*15, 'col': 'best_of_gen'},
             # {'time': 60*20, 'col': 'best_of_gen'},
         ]
-    plot_statistics_over_total(measures_df, statistics_df, output_dir, markers=markers, name=f'statistics_over_joules_{min_gen}_to_{max_gen}')
-    plot_memory_over_joules(measures_df, statistics_df, output_dir, name=f'memory_over_joules_{min_gen}_to_{max_gen}')
-    plot_memory_over_gen(measures_df, statistics_df, output_dir, name=f'memory_over_gen_{min_gen}_to_{max_gen}')
-    plot_dual_graph(measures_df, statistics_df, output_dir, markers=markers, name=f'dual_over_gen_{min_gen}_to_{max_gen}')
+    plot_statistics_over_total(measures_df, statistics_df, output_dir, markers=markers, name=f'statistics_over_joules_{min_gen}_to_{max_gen}', num_exps_to_plot=num_exps_to_plot)
+    plot_memory_over_joules(measures_df, statistics_df, output_dir, name=f'memory_over_joules_{min_gen}_to_{max_gen}', num_exps_to_plot=num_exps_to_plot)
+    plot_memory_over_gen(measures_df, statistics_df, output_dir, name=f'memory_over_gen_{min_gen}_to_{max_gen}', num_exps_to_plot=num_exps_to_plot)
+    plot_dual_graph(measures_df, statistics_df, output_dir, markers=markers, name=f'dual_over_gen_{min_gen}_to_{max_gen}', num_exps_to_plot=num_exps_to_plot)
     
 
 
@@ -249,6 +249,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('experiment_dir', type=str,
                     help='The program must recive the measures file to be parsed')
+    parser.add_argument('--num_exps_to_plot', type=int, default=inf,
+                    help='The number of experiments to draw trained lines for')
     parser.add_argument('--min_gen', type=int, default=0,
                     help='Minimum generation to consider in the plots')
     parser.add_argument('--max_gen', type=int, default=6000,
@@ -267,5 +269,6 @@ if __name__ == "__main__":
     main(measures_file=os.path.join(args.experiment_dir, 'mean_measures.csv'),
          statistics_file=os.path.join(args.experiment_dir, 'mean_statistics.csv'),
          output_dir=images_dir,
+         num_exps_to_plot=args.num_exps_to_plot,
          min_gen=args.min_gen,
          max_gen=args.max_gen)
