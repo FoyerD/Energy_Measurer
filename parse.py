@@ -65,7 +65,6 @@ def parse_statistics(statistics_file:str, output_dir:str):
 def group_df(df: pd.DataFrame, key_col: str):
     # Separate columns by type
     
-    df['TRAINED'] = df['TRAINED'].astype(bool)
     bool_cols = df.select_dtypes(bool).columns.tolist()
     other_cols = [c for c in df.columns if c not in bool_cols + [key_col]]
     
@@ -133,6 +132,7 @@ def merge_files(measures_dir, statistics_dir, out_dir, base_pkg:float=0.0, base_
         statistics_value_stds[col].columns = ['gen', f'{col}_std']
 
     # merging
+    all_statistics_df['TRAINED'] = all_statistics_df['TRAINED'].astype(bool)
     merged_measures_df = group_df(all_measures_df, 'gen').reset_index()
     merged_statistics_df = group_df(all_statistics_df, 'gen').reset_index()
 

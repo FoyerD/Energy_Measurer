@@ -4,6 +4,7 @@ import os
 from matplotlib import pyplot as plt
 import pandas as pd
 from math import inf
+import ast
 
 def unzip(tuples):
     # Using zip() with * to unzip the list
@@ -19,10 +20,23 @@ def subtract_per_diff(df, avg, col, time_col='time'):
     df[col] -= avg * df[time_col].diff().fillna(0)
     return df 
     
+# def add_trained_markers(df: pd.DataFrame, x_col: str, ax):
+#     trained_points = df.loc[df['TRAINED'] > 0, [x_col, 'TRAINED']]
+#     for _, row in trained_points.iterrows():
+#         ax.axvline(x=row[x_col], color='blue', linestyle='--', alpha=row['TRAINED'])
+
 def add_trained_markers(df: pd.DataFrame, x_col: str, ax):
-    trained_points = df.loc[df['TRAINED'] > 0, [x_col, 'TRAINED']]
-    for _, row in trained_points.iterrows():
-        ax.axvline(x=row[x_col], color='blue', linestyle='--', alpha=row['TRAINED'])
+    # Assume each df['TRAINED'] is a list of same length
+    n_experiments = len(df.iloc[0]['TRAINED'])
+    print(type(df.iloc[0]['TRAINED']))
+    cmap = plt.cm.get_cmap('tab10', n_experiments)  # or use another colormap
+    
+    for i in range(n_experiments):
+        color = cmap(i)
+        # get x values where this experiment was trained (True)
+        trained_xs = df.loc[df['TRAINED'].apply(lambda lst: lst[i]), x_col]
+        for x in trained_xs:
+            ax.axvline(x=x, color=color, linestyle='--', alpha=0.5)
 
 def plot_dual_graph(measures_df, statistics_df, output_dir:str, markers:list, name:str='dual_plot'):
     measures_df['TOTAL'] = measures_df['PKG'] + measures_df['GPU']
@@ -67,9 +81,6 @@ def plot_dual_graph(measures_df, statistics_df, output_dir:str, markers:list, na
         color='green', alpha=0.2
     )
 
-    # points = statistics_df.loc[statistics_df['TRAINED'] > 0.0, 'gen']
-    # for total_val in points:
-    #    axes[0].axvline(x=total_val, color='blue', linestyle='--', alpha=0.5)
     add_trained_markers(statistics_df, 'gen', axes[0])
 
 
@@ -111,9 +122,6 @@ def plot_memory_over_gen(measures_df, statistics_df, output_dir: str, name:str='
             label='Std Dev'
         )
     
-    # trained_points = merged_df.loc[merged_df['TRAINED'] > 0.0, 'gen']
-    # for gen_val in trained_points:
-    #    plt.axvline(x=gen_val, color='blue', linestyle='--', alpha=0.5)
     add_trained_markers(merged_df, 'gen', plt)
     
     plt.xlabel('Generation')
@@ -133,6 +141,7 @@ def plot_statistics_over_total(measures_df, statistics_df, output_dir: str, mark
     # Merge dataframes on 'gen' to align TOTAL and best_of_gen
     merged_df = pd.merge(statistics_df, measures_df[['gen', 'TOTAL']], on='gen', how='inner')
     merged_df = merged_df.sort_values(by='TOTAL')
+
 
     # Plot best_of_gen vs TOTAL
     plt.figure(figsize=(10, 6))
@@ -157,9 +166,6 @@ def plot_statistics_over_total(measures_df, statistics_df, output_dir: str, mark
             label='Std Dev'
         )
     
-    # trained_points = merged_df.loc[merged_df['TRAINED'] > 0.0, 'TOTAL']
-    # for total_val in trained_points:
-    #     plt.axvline(x=total_val, color='blue', linestyle='--', alpha=0.5)
     add_trained_markers(merged_df, 'TOTAL', plt) 
     
     plt.xlabel('TOTAL Energy (Joules)')
@@ -203,9 +209,6 @@ def plot_memory_over_joules(measures_df, statistics_df, output_dir: str, name:st
             label='Std Dev'
         )
     
-    # trained_points = merged_df.loc[merged_df['TRAINED'] > 0, 'TOTAL']
-    # for total_val in trained_points:
-    #     plt.axvline(x=total_val, color='blue', linestyle='--', alpha=0.5)
     add_trained_markers(merged_df, 'TOTAL', plt)
 
     plt.xlabel('TOTAL Energy (Joules)')
@@ -222,6 +225,8 @@ def main(measures_file:str, statistics_file:str, output_dir:str, over_energy:boo
     measures_df = pd.read_csv(measures_file)
     statistics_df = pd.read_csv(statistics_file)
     statistics_df = statistics_df[statistics_df['best_of_gen'] > 0]
+    statistics_df['TRAINED'] = statistics_df['TRAINED'].apply(ast.literal_eval)
+
 
     measures_df = measures_df[measures_df['gen'] <= max_gen][measures_df['gen'] > min_gen]
     statistics_df = statistics_df[statistics_df['gen'] <= max_gen][statistics_df['gen'] > min_gen]
