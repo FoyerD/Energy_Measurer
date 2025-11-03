@@ -90,6 +90,7 @@ def merge_files(measures_dir, statistics_dir, out_dir, base_pkg:float=0.0, base_
     # collecting measures dataframes
     for root, dirs, files in os.walk(measures_dir):
         for file in files:
+            print(os.path.join(root,file))
             curr_df = pd.read_csv(os.path.join(root, file))
             curr_df['PKG'] = ((curr_df['PKG'] - base_pkg) / 1000)
             curr_df['GPU'] = ((curr_df['GPU'] - base_gpu) / 1000)
