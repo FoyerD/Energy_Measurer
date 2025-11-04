@@ -43,7 +43,8 @@ def plot_dual_graph(measures_df, statistics_df, output_dir:str, markers:list, na
     fig, ax1 = plt.subplots(figsize=(10, 6))
     axes = [ax1, ax1.twinx()]    
     
-    axes[0].set_title('Energy Consumption')
+    axes[0].set_title('Energy Consumption & Best Fitness')
+    axes[0].set_xlabel('Generation')
     axes[0].set_ylabel('Joules')
     axes[1].set_ylabel('Fitness')
     
@@ -64,7 +65,7 @@ def plot_dual_graph(measures_df, statistics_df, output_dir:str, markers:list, na
     )
     
     
-    axes[0].plot(measures_df['gen'], measures_df['TOTAL'], color='purple', label='GPU Joules')
+    axes[0].plot(measures_df['gen'], measures_df['TOTAL'], color='purple', label='Total Joules')
     axes[0].fill_between(
         measures_df['gen'],
         measures_df['GPU'] - measures_df['GPU_std'],

@@ -27,26 +27,19 @@ def extract_toml_fields(toml_path: str):
     crossover_args = crossover.get("args", {})
 
     batch_size = np.nan
-    fitness_epsilon = np.nan
-    k = np.nan
-    arity = np.nan
+    training_scheduling = np.nan
 
     if crossover_name == "dnc":
         dnc_conf = crossover_args.get("dnc_config", {})
         batch_size = dnc_conf.get("batch_size", np.nan)
-        fitness_epsilon = dnc_conf.get("fitness_epsilon", np.nan)
-    elif crossover_name == "kpoint":
-        k = crossover_args.get("k", np.nan)
-        arity = crossover_args.get("arity", np.nan)
+        training_scheduling = dnc_conf.get("fitness_epsilon", np.nan)
 
     return {
         "domain_name": domain_name,
-        "dataset_name": dataset_name,
+        "instance": dataset_name,
         "crossover_name": crossover_name,
-        "batch_size": batch_size,
-        "fitness_epsilon": fitness_epsilon,
-        "k": k,
-        "arity": arity,
+        "bs": batch_size,
+        "ts": training_scheduling,
     }
 
 
@@ -76,37 +69,77 @@ def extract_csv_values(experiment_dir: str):
     return total, best_of_gen
 
 
-def group_by_dataset(df):
+def format_df(df: pd.DataFrame) -> pd.DataFrame:
+    import pandas as pd
+
+def format_df(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Split into two DataFrames: BPP and Graph Coloring.
-    Group by dataset_name and take the last value for Fitness and MJ if multiple runs exist.
+    Flatten a DataFrame so that for each 'instance',
+    there is a separate column for each combination of 'bs' or 'ts'
+    when crossover_name == 'dnc'.
+    Produces columns like Fitness_bs512, MJ_bs512, Fitness_ts0.001, MJ_ts0.001, etc.
     """
-    # Fill missing dataset_name with experiment name
-    df["dataset_name"] = df["dataset_name"].fillna(df["experiment"])
+    # Keep only DNC rows
+    dnc_df = df.copy()
 
-    # Select relevant columns
-    simple_df = df[["domain_name", "dataset_name", "best_of_gen", "total"]].copy()
-    simple_df.rename(columns={"best_of_gen": "Fitness", "total": "MJ"}, inplace=True)
+    # Create a 'setting' column describing each config
+    def make_label(r):
+        label_parts = []
+        if pd.notna(r['bs']):
+            label_parts.append(f"bs{int(r['bs'])}")
+        if pd.notna(r['ts']):
+            label_parts.append(f"st{r['ts']:.6g}")
+        return "_".join(label_parts) if label_parts else "unknown"
 
-    # Group by domain_name and dataset_name
-    grouped = simple_df.groupby(["domain_name", "dataset_name"], as_index=False).last()
+    dnc_df['setting'] = dnc_df.apply(make_label, axis=1)
 
-    # Split into two separate DataFrames
-    bpp_df = grouped[grouped["domain_name"] == "bpp"].copy()
-    gc_df = grouped[grouped["domain_name"] == "graph_coloring"].copy()
+    # Pivot: create separate Fitness and MJ columns per setting
+    flat = dnc_df.pivot_table(
+        index='instance',
+        columns='setting',
+        values=['Fitness', 'MJ'],
+        aggfunc='first'  # or 'mean', depending on how you want to combine duplicates
+    )
+
+    # Flatten multiindex columns
+    flat.columns = [f"{metric}_{setting}" for metric, setting in flat.columns]
+    flat = flat.reset_index()
 
 
-    bpp_df.drop("domain_name", axis=1, inplace=True) 
-    gc_df.drop("domain_name", axis=1, inplace=True) 
+    order = [
+        "instance",
 
-    return bpp_df, gc_df
+        # (optional) One Point crossover columns
+        "Fitness_kpoint", "MJ_kpoint",
+
+        # DNC bs variations
+        "Fitness_unknown",   "MJ_unknown",
+        "Fitness_bs512_st0", "MJ_bs512_st0",
+        "Fitness_bs1024_st0", "MJ_bs1024_st0",
+        "Fitness_bs2048_st0", "MJ_bs2048_st0",
+
+        # DNC stability (st) variations
+        "Fitness_bs2048_st0.1", "MJ_bs2048_st0.1",
+        "Fitness_bs2048_st0.01", "MJ_bs2048_st0.01",
+        "Fitness_bs2048_st0.001", "MJ_bs2048_st0.001",
+    ] 
+
+    # Keep only existing columns from `order`
+    existing_cols = [c for c in order if c in flat.columns]
+    # Add any leftover columns (to avoid losing data)
+    remaining_cols = [c for c in flat.columns if c not in existing_cols]
+    
+    return flat[existing_cols + remaining_cols]
+
+    
+
 
 def export_latex(df, filename):
     df.to_csv(filename, sep="&", index=False, header=False, lineterminator=" \\\\\n")
     print(f"Table written to {filename}")
 
-def main(experiments_path: str):
-    rows = []
+def main(experiments_path: str) -> dict[str, pd.DataFrame]: 
+    df_rows = {'bpp': [], 'graph_coloring': []}
 
     for root, dirs, files in os.walk(experiments_path):
         toml_files = [f for f in files if f.endswith(".toml")]
@@ -115,26 +148,26 @@ def main(experiments_path: str):
 
         toml_path = os.path.join(root, toml_files[0])
         toml_info = extract_toml_fields(toml_path)
+        domain_name = toml_info['domain_name']
+        #toml_info.pop('domain_name')
         total, best_of_gen = extract_csv_values(root)
 
         row = {
-            "experiment": os.path.basename(root),
             **toml_info,
-            "total": total,
-            "best_of_gen": best_of_gen,
+            "MJ": total,
+            "Fitness": best_of_gen,
         }
-        rows.append(row)
+        df_rows[domain_name].append(row)
 
-    df = pd.DataFrame(rows)
-    print(df)
-    return df
+    dfs = {domain_name: pd.DataFrame(df_rows[domain_name]) for domain_name in df_rows if len(df_rows[domain_name]) > 0}
+    formated_dfs = {domain_name: format_df(dfs[domain_name]) for domain_name in dfs}
+    return formated_dfs
 
 
 if __name__ == "__main__":
     assert len(sys.argv) == 2, "Usage: python collect_experiments.py <experiments_dir>"
-    df = main(sys.argv[1])
-    bpp_df, gc_df = group_by_dataset(df)
-
-    export_latex(bpp_df, "bpp_table.txt")
-    export_latex(gc_df, "graph_coloring_table.txt")
+    exps_path = sys.argv[1]
+    dfs = main(exps_path)
+    for domain_name in dfs:
+        export_latex(dfs[domain_name],f"{domain_name}_results.csv")
 
