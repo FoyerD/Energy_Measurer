@@ -3,6 +3,8 @@ import sys
 import tomllib
 import pandas as pd
 import numpy as np
+import warnings
+warnings.filterwarnings("ignore")
 
 def extract_toml_fields(toml_path: str):
     """Extract relevant fields from the .toml file, handling different domains and crossovers."""
@@ -36,7 +38,7 @@ def extract_toml_fields(toml_path: str):
 
     return {
         "domain_name": domain_name,
-        "instance": dataset_name,
+        "instance": dataset_name.replace('_', r'\_'),
         "crossover_name": crossover_name,
         "bs": batch_size,
         "ts": training_scheduling,
@@ -47,6 +49,7 @@ def extract_csv_values(experiment_dir: str):
     """Extract total (PKG+GPU) and best_of_gen from experiment CSVs."""
     total = np.nan
     best_of_gen = np.nan
+    time = np.nan
 
     measures_path = os.path.join(experiment_dir, "mean_measures.csv")
     stats_path = os.path.join(experiment_dir, "mean_statistics.csv")
@@ -55,6 +58,7 @@ def extract_csv_values(experiment_dir: str):
         try:
             df = pd.read_csv(measures_path)
             pkg, gpu = df.loc[df.index[-1], ["PKG", "GPU"]]
+            time = df.loc[df.index[-1], "time"]
             total = float(pkg + gpu)
         except Exception:
             pass
@@ -66,11 +70,8 @@ def extract_csv_values(experiment_dir: str):
         except Exception:
             pass
 
-    return total, best_of_gen
+    return total / 10**6, best_of_gen, time / 60**2
 
-
-def format_df(df: pd.DataFrame) -> pd.DataFrame:
-    import pandas as pd
 
 def format_df(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -100,6 +101,7 @@ def format_df(df: pd.DataFrame) -> pd.DataFrame:
         values=['Fitness', 'MJ'],
         aggfunc='first'  # or 'mean', depending on how you want to combine duplicates
     )
+    
 
     # Flatten multiindex columns
     flat.columns = [f"{metric}_{setting}" for metric, setting in flat.columns]
@@ -134,9 +136,36 @@ def format_df(df: pd.DataFrame) -> pd.DataFrame:
     
 
 
-def export_latex(df, filename):
-    df.to_csv(filename, sep="&", index=False, header=False, lineterminator=" \\\\\n")
-    print(f"Table written to {filename}")
+def parse_df(df: pd.DataFrame) -> str:
+    df = df.round(3)
+    mj_cols = [col for col in df.columns if 'MJ' in col and 'unknown' not in col]
+    fit_cols = [col for col in df.columns if 'Fitness' in col]
+    for idx, row in df.iterrows():
+        # MIN
+        mj_vals = row[mj_cols].replace({np.nan: np.inf})
+        mj_col = mj_vals.idxmin()
+
+        val = row[mj_col]
+        if pd.notna(val):
+            df.at[idx, mj_col] = f"\\textbf{{{val}}}"
+
+
+        # MAX
+        fit_vals = row[fit_cols].replace({np.nan: np.inf})
+        fit_col = fit_vals.idxmax()
+
+        val = row[fit_col]
+        if pd.notna(val):
+            df.at[idx, fit_col] = f"\\textbf{{{val}}}"
+
+
+    # print LaTeX table lines
+    csv_str = ''
+    for _, row in df.iterrows():
+        vals = [str(v) if pd.notna(v) else "0" for v in row]
+        csv_str += " & ".join(vals) + " \\\\\n"
+    return csv_str
+
 
 def main(experiments_path: str) -> dict[str, pd.DataFrame]: 
     df_rows = {'bpp': [], 'graph_coloring': []}
@@ -150,8 +179,7 @@ def main(experiments_path: str) -> dict[str, pd.DataFrame]:
         toml_info = extract_toml_fields(toml_path)
         domain_name = toml_info['domain_name']
         #toml_info.pop('domain_name')
-        total, best_of_gen = extract_csv_values(root)
-
+        total, best_of_gen, time = extract_csv_values(root)
         row = {
             **toml_info,
             "MJ": total,
@@ -168,6 +196,8 @@ if __name__ == "__main__":
     assert len(sys.argv) == 2, "Usage: python collect_experiments.py <experiments_dir>"
     exps_path = sys.argv[1]
     dfs = main(exps_path)
-    for domain_name in dfs:
-        export_latex(dfs[domain_name],f"{domain_name}_results.csv")
+    for domain_name, df in dfs.items():
+        print(f"-----{domain_name}-----")
+        print(parse_df(df))
+        print()
 

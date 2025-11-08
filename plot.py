@@ -38,7 +38,6 @@ def add_trained_markers(df: pd.DataFrame, x_col: str, ax, num_exps_to_plot: int 
             ax.axvline(x=x, color=color, linestyle='--', alpha=0.5)
 
 def plot_dual_graph(measures_df, statistics_df, output_dir:str, markers:list, name:str='dual_plot', num_exps_to_plot: int = inf):
-    measures_df['TOTAL'] = measures_df['PKG'] + measures_df['GPU']
     fig, ax1 = plt.subplots(figsize=(10, 6))
     axes = [ax1, ax1.twinx()]    
     
@@ -47,17 +46,8 @@ def plot_dual_graph(measures_df, statistics_df, output_dir:str, markers:list, na
     axes[0].set_ylabel('Megajoules', fontsize=20)
     axes[1].set_ylabel('Fitness', fontsize=20)
 
-    axes[0].tick_params(axis='both', labelsize=12)
-    axes[1].tick_params(axis='both', labelsize=12)
-
-    measures_df['PKG'] = measures_df['PKG'] / 1e6
-    measures_df['PKG_std'] = measures_df['PKG_std'] / 1e6
-
-    measures_df['GPU'] = measures_df['GPU'] / 1e6
-    measures_df['GPU_std'] = measures_df['GPU_std'] / 1e6
-
-    measures_df['TOTAL'] = measures_df['TOTAL'] / 1e6
-    measures_df['GPU_std'] = measures_df['TOTAL_std'] / 1e6
+    axes[0].tick_params(axis='both', labelsize=18)
+    axes[1].tick_params(axis='both', labelsize=18)
 
     axes[0].plot(measures_df['gen'], measures_df['PKG'], color='red', label='PKG MJ')
     axes[0].fill_between(
@@ -99,6 +89,62 @@ def plot_dual_graph(measures_df, statistics_df, output_dir:str, markers:list, na
     # for marker in markers:
     #     plotter.add_marker(time=marker['time'], time_col='time', col=marker['col'], axes_n=1, db_name='statistics')
     
+    fig.legend(loc='upper left', bbox_to_anchor=(0.0, 1.0))
+    fig.savefig(f'{output_dir}/svgs/{name}.svg')
+    fig.savefig(f'{output_dir}/pngs/{name}.png')
+
+def plot_statistics_over_time(measures_df, statistics_df, output_dir:str, markers:list, name:str='dual_plot', num_exps_to_plot: int = inf):
+    fig, ax1 = plt.subplots(figsize=(10, 6))
+    axes = [ax1, ax1.twinx()]    
+    
+    # axes[0].set_title('Energy Consumption & Best Fitness')
+    axes[0].set_xlabel('Seconds', fontsize=20)
+    axes[0].set_ylabel('Megajoules', fontsize=20)
+    axes[1].set_ylabel('Fitness', fontsize=20)
+
+    axes[0].tick_params(axis='both', labelsize=12)
+    axes[1].tick_params(axis='both', labelsize=12)
+
+    axes[0].plot(measures_df['time'], measures_df['PKG'], color='red', label='PKG MJ')
+    axes[0].fill_between(
+        measures_df['time'],
+        measures_df['PKG'] - measures_df['PKG_std'],
+        measures_df['PKG'] + measures_df['PKG_std'],
+        color='red', alpha=0.2
+    )
+
+    axes[0].plot(measures_df['time'], measures_df['GPU'], color='blue', label='GPU MJ')
+    axes[0].fill_between(
+        measures_df['time'],
+        measures_df['GPU'] - measures_df['GPU_std'],
+        measures_df['GPU'] + measures_df['GPU_std'],
+        color='blue', alpha=0.2
+    )
+    
+    
+    axes[0].plot(measures_df['time'], measures_df['TOTAL'], color='purple', label='Total MJ')
+    axes[0].fill_between(
+        measures_df['time'],
+        measures_df['TOTAL'] - measures_df['TOTAL_std'],
+        measures_df['TOTAL'] + measures_df['TOTAL_std'],
+        color='purple', alpha=0.2
+    )
+    
+    
+    axes[1].plot(statistics_df['time'], statistics_df['best_of_gen'], color='green', label='Best of Gen Fitness')
+    axes[1].fill_between(
+        statistics_df['time'],
+        statistics_df['best_of_gen'] - statistics_df['best_of_gen_std'],
+        statistics_df['best_of_gen'] + statistics_df['best_of_gen_std'],
+        color='green', alpha=0.2
+    )
+
+    add_trained_markers(statistics_df, 'time', axes[0], num_exps_to_plot)
+
+
+    # for marker in markers:
+    #     plotter.add_marker(time=marker['time'], time_col='time', col=marker['col'], axes_n=1, db_name='statistics')
+    
     fig.legend(loc='upper left')
     fig.savefig(f'{output_dir}/svgs/{name}.svg')
     fig.savefig(f'{output_dir}/pngs/{name}.png')
@@ -107,7 +153,7 @@ def plot_dual_graph(measures_df, statistics_df, output_dir:str, markers:list, na
 def plot_memory_over_gen(measures_df, statistics_df, output_dir: str, name:str='memory_over_gen', num_exps_to_plot: int = inf):
     
     # Merge dataframes on 'gen' to align TOTAL and best_of_gen
-    merged_df = pd.merge(statistics_df, measures_df[['gen', 'TOTAL']], on='gen', how='inner')
+    merged_df = pd.merge(statistics_df.drop(columns=['TOTAL']), measures_df[['gen', 'TOTAL']], on='gen', how='inner')
     merged_df = merged_df.sort_values(by='gen')
 
     # Plot memory vs gen
@@ -146,7 +192,7 @@ def plot_memory_over_gen(measures_df, statistics_df, output_dir: str, name:str='
 
 def plot_statistics_over_total(measures_df, statistics_df, output_dir: str, markers, name:str='statistics_over_joules', num_exps_to_plot: int = inf):
     # Merge dataframes on 'gen' to align TOTAL and best_of_gen
-    merged_df = pd.merge(statistics_df, measures_df[['gen', 'TOTAL']], on='gen', how='inner')
+    merged_df = pd.merge(statistics_df.drop(columns=['TOTAL']), measures_df[['gen', 'TOTAL']], on='gen', how='inner')
     merged_df = merged_df.sort_values(by='TOTAL')
 
 
@@ -189,7 +235,7 @@ def plot_statistics_over_total(measures_df, statistics_df, output_dir: str, mark
 def plot_memory_over_joules(measures_df, statistics_df, output_dir: str, name:str='memory_over_joules', num_exps_to_plot: int = inf):
     
     # Merge dataframes on 'gen' to align TOTAL and MEMORY
-    merged_df = pd.merge(statistics_df, measures_df[['gen', 'TOTAL']], on='gen', how='inner')
+    merged_df = pd.merge(statistics_df.drop(columns=['TOTAL']), measures_df[['gen', 'TOTAL']], on='gen', how='inner')
     merged_df = merged_df.sort_values(by='TOTAL')
 
     # Plot memory vs TOTAL
@@ -232,6 +278,15 @@ def main(measures_file:str, statistics_file:str, output_dir:str, num_exps_to_plo
     statistics_df = statistics_df[statistics_df['best_of_gen'] > 0]
     statistics_df['TRAINED'] = statistics_df['TRAINED'].apply(ast.literal_eval)
 
+    measures_df['PKG'] = measures_df['PKG'] / 1e6
+    measures_df['PKG_std'] = measures_df['PKG_std'] / 1e6
+
+    measures_df['GPU'] = measures_df['GPU'] / 1e6
+    measures_df['GPU_std'] = measures_df['GPU_std'] / 1e6
+
+    measures_df['TOTAL'] = measures_df['TOTAL'] / 1e6
+    measures_df['TOTAL_std'] = measures_df['TOTAL_std'] / 1e6
+
 
     measures_df = measures_df[measures_df['gen'] <= max_gen][measures_df['gen'] > min_gen]
     statistics_df = statistics_df[statistics_df['gen'] <= max_gen][statistics_df['gen'] > min_gen]
@@ -246,7 +301,7 @@ def main(measures_file:str, statistics_file:str, output_dir:str, num_exps_to_plo
     plot_memory_over_joules(measures_df, statistics_df, output_dir, name=f'memory_over_joules_{min_gen}_to_{max_gen}', num_exps_to_plot=num_exps_to_plot)
     plot_memory_over_gen(measures_df, statistics_df, output_dir, name=f'memory_over_gen_{min_gen}_to_{max_gen}', num_exps_to_plot=num_exps_to_plot)
     plot_dual_graph(measures_df, statistics_df, output_dir, markers=markers, name=f'dual_over_gen_{min_gen}_to_{max_gen}', num_exps_to_plot=num_exps_to_plot)
-    
+    plot_statistics_over_time(measures_df, statistics_df, output_dir, markers=markers, name=f'statistics_over_time_{min_gen}_to_{max_gen}', num_exps_to_plot=num_exps_to_plot)
 
 
 
