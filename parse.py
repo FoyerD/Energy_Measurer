@@ -47,7 +47,6 @@ def parse_pinpoint(pinpoint_file:str, output_dir:str):
             writer.writerow(header)
             writer.writerows(data_rows)
 
-        print(f"Wrote {output_path}")
 
 def parse_statistics(statistics_file:str, output_dir:str):
     os.makedirs(output_dir, exist_ok=True)
@@ -60,16 +59,12 @@ def parse_statistics(statistics_file:str, output_dir:str):
         with open(os.path.join(output_dir, f'statistics_{i}.csv'), 'a') as f:
             f.write(measure)
         
-        print(f"Wrote {os.path.join(output_dir, f'statistics_{i}.csv')}")
 
 def group_df(df: pd.DataFrame, key_col: str):
     # Separate columns by type
     
     bool_cols = df.select_dtypes(bool).columns.tolist()
     other_cols = [c for c in df.columns if c not in bool_cols + [key_col]]
-    
-    print(f"bool_cols: {bool_cols}")
-    print(f"other_cols: {other_cols}")
 
     # Build aggregation dictionary
     agg_dict = {col: list for col in bool_cols}
@@ -90,12 +85,12 @@ def merge_files(measures_dir, statistics_dir, out_dir, base_pkg:float=0.0, base_
     # collecting measures dataframes
     for root, dirs, files in os.walk(measures_dir):
         for file in files:
-            print(os.path.join(root,file))
             curr_df = pd.read_csv(os.path.join(root, file))
             curr_df['PKG'] = ((curr_df['PKG'] - base_pkg) / 1000)
             curr_df['GPU'] = ((curr_df['GPU'] - base_gpu) / 1000)
             curr_df['PKG'] = curr_df['PKG'].cumsum()
             curr_df['GPU'] = curr_df['GPU'].cumsum()
+            curr_df['TOTAL'] = curr_df['GPU'] + curr_df['PKG']
             measures.append(preprocess_df(curr_df))
 
     # collecting statistics dataframes
@@ -121,15 +116,18 @@ def merge_files(measures_dir, statistics_dir, out_dir, base_pkg:float=0.0, base_
     all_statistics_df['best_of_gen'] = all_statistics_df['best_of_gen'].astype(float)
 
     # getting the std of columns
-    measures_value_stds = {'PKG': 0, 'GPU': 0, 'MEMORY': 0}
+    measures_value_stds = {'PKG': 0, 'GPU': 0, 'MEMORY': 0, 'TOTAL': 0}
     statistics_value_stds = {'best_of_gen': 0}
 
+    grouped_mesures = all_measures_df.groupby('gen')
+    grouped_statistics = all_statistics_df.groupby('gen')
+
     for i, col in enumerate(measures_value_stds):
-        measures_value_stds[col] = all_measures_df.groupby('gen')[col].std().reset_index().fillna(0)
+        measures_value_stds[col] = grouped_mesures[col].std().reset_index().fillna(0)
         measures_value_stds[col].columns = ['gen', f'{col}_std']
 
     for i, col in enumerate(statistics_value_stds):
-        statistics_value_stds[col] = all_statistics_df.groupby('gen')[col].std().reset_index().fillna(0)
+        statistics_value_stds[col] = grouped_statistics[col].std().reset_index().fillna(0)
         statistics_value_stds[col].columns = ['gen', f'{col}_std']
 
     # merging
@@ -142,19 +140,25 @@ def merge_files(measures_dir, statistics_dir, out_dir, base_pkg:float=0.0, base_
             measures_value_stds['PKG'],
             on='gen',
             how='left'
-            ).fillna(0)
+            )
     final_measures_df = pd.merge(
             final_measures_df,
             measures_value_stds['GPU'],
             on='gen',
             how='left'
-            ).fillna(0)
+            )
     final_measures_df = pd.merge(
             final_measures_df,
             measures_value_stds['MEMORY'],
             on='gen',
             how='left'
-            ).fillna(0)
+            )
+    final_measures_df = pd.merge(
+            final_measures_df,
+            measures_value_stds['TOTAL'],
+            on='gen',
+            how='left'
+            )
     final_statistics_df = pd.merge(
             merged_statistics_df,
             statistics_value_stds['best_of_gen'],
@@ -191,8 +195,6 @@ def get_baseline_stats(baseline_file: str):
         mean_pkgs.append(df['PKG'].astype(float).mean())
         mean_gpus.append(df['GPU'].astype(float).mean())
 
-    print(f'mean_pkgs: {mean(mean_pkgs)}')
-    print(f'mean_gpus: {mean(mean_gpus)}')
     return dfs, mean(mean_pkgs), mean(mean_gpus)
 
 if __name__ == '__main__':
@@ -211,6 +213,8 @@ if __name__ == '__main__':
     measures_dir = os.path.join(args.exp_dir, 'parsed_measures')
     os.makedirs(statistics_dir, exist_ok=True)
     os.makedirs(measures_dir, exist_ok=True)
+
+    print(f"------ Parsing {args.exp_dir} ------")
 
     parse_statistics(os.path.join(args.exp_dir, 'statistics.csv'),
                      statistics_dir)

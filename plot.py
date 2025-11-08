@@ -28,8 +28,7 @@ def subtract_per_diff(df, avg, col, time_col='time'):
 def add_trained_markers(df: pd.DataFrame, x_col: str, ax, num_exps_to_plot: int = inf):
     # Assume each df['TRAINED'] is a list of same length
     n_experiments = len(df.iloc[0]['TRAINED'])
-    print(type(df.iloc[0]['TRAINED']))
-    cmap = plt.cm.get_cmap('tab10', n_experiments)  # or use another colormap
+    cmap = plt.get_cmap('tab10', n_experiments)  # or use another colormap
     
     for i in range(min(n_experiments, num_exps_to_plot)):
         color = cmap(i)
@@ -43,12 +42,24 @@ def plot_dual_graph(measures_df, statistics_df, output_dir:str, markers:list, na
     fig, ax1 = plt.subplots(figsize=(10, 6))
     axes = [ax1, ax1.twinx()]    
     
-    axes[0].set_title('Energy Consumption & Best Fitness')
-    axes[0].set_xlabel('Generation')
-    axes[0].set_ylabel('Joules')
-    axes[1].set_ylabel('Fitness')
-    
-    axes[0].plot(measures_df['gen'], measures_df['PKG'], color='red', label='PKG Joules')
+    # axes[0].set_title('Energy Consumption & Best Fitness')
+    axes[0].set_xlabel('Generation', fontsize=20)
+    axes[0].set_ylabel('Megajoules', fontsize=20)
+    axes[1].set_ylabel('Fitness', fontsize=20)
+
+    axes[0].tick_params(axis='both', labelsize=12)
+    axes[1].tick_params(axis='both', labelsize=12)
+
+    measures_df['PKG'] = measures_df['PKG'] / 1e6
+    measures_df['PKG_std'] = measures_df['PKG_std'] / 1e6
+
+    measures_df['GPU'] = measures_df['GPU'] / 1e6
+    measures_df['GPU_std'] = measures_df['GPU_std'] / 1e6
+
+    measures_df['TOTAL'] = measures_df['TOTAL'] / 1e6
+    measures_df['GPU_std'] = measures_df['TOTAL_std'] / 1e6
+
+    axes[0].plot(measures_df['gen'], measures_df['PKG'], color='red', label='PKG MJ')
     axes[0].fill_between(
         measures_df['gen'],
         measures_df['PKG'] - measures_df['PKG_std'],
@@ -56,7 +67,7 @@ def plot_dual_graph(measures_df, statistics_df, output_dir:str, markers:list, na
         color='red', alpha=0.2
     )
 
-    axes[0].plot(measures_df['gen'], measures_df['GPU'], color='blue', label='GPU Joules')
+    axes[0].plot(measures_df['gen'], measures_df['GPU'], color='blue', label='GPU MJ')
     axes[0].fill_between(
         measures_df['gen'],
         measures_df['GPU'] - measures_df['GPU_std'],
@@ -65,11 +76,11 @@ def plot_dual_graph(measures_df, statistics_df, output_dir:str, markers:list, na
     )
     
     
-    axes[0].plot(measures_df['gen'], measures_df['TOTAL'], color='purple', label='Total Joules')
+    axes[0].plot(measures_df['gen'], measures_df['TOTAL'], color='purple', label='Total MJ')
     axes[0].fill_between(
         measures_df['gen'],
-        measures_df['GPU'] - measures_df['GPU_std'],
-        measures_df['GPU'] + measures_df['GPU_std'],
+        measures_df['TOTAL'] - measures_df['TOTAL_std'],
+        measures_df['TOTAL'] + measures_df['TOTAL_std'],
         color='purple', alpha=0.2
     )
     
@@ -94,8 +105,6 @@ def plot_dual_graph(measures_df, statistics_df, output_dir:str, markers:list, na
 
 
 def plot_memory_over_gen(measures_df, statistics_df, output_dir: str, name:str='memory_over_gen', num_exps_to_plot: int = inf):
-    # Ensure TOTAL is available
-    measures_df['TOTAL'] = measures_df['PKG'] + measures_df['GPU']
     
     # Merge dataframes on 'gen' to align TOTAL and best_of_gen
     merged_df = pd.merge(statistics_df, measures_df[['gen', 'TOTAL']], on='gen', how='inner')
@@ -128,7 +137,7 @@ def plot_memory_over_gen(measures_df, statistics_df, output_dir: str, name:str='
     plt.xlabel('Generation')
     plt.ylabel('Memory Usage (KB)')
     plt.title('Memory Usage Over Generations')
-    plt.legend()
+    plt.legend(loc='upper left')
     plt.grid(True)
     
     plt.savefig(f'{output_dir}/svgs/{name}.svg')
@@ -136,9 +145,6 @@ def plot_memory_over_gen(measures_df, statistics_df, output_dir: str, name:str='
     plt.close()
 
 def plot_statistics_over_total(measures_df, statistics_df, output_dir: str, markers, name:str='statistics_over_joules', num_exps_to_plot: int = inf):
-    # Ensure TOTAL is available
-    measures_df['TOTAL'] = measures_df['PKG'] + measures_df['GPU']
-    
     # Merge dataframes on 'gen' to align TOTAL and best_of_gen
     merged_df = pd.merge(statistics_df, measures_df[['gen', 'TOTAL']], on='gen', how='inner')
     merged_df = merged_df.sort_values(by='TOTAL')
@@ -181,8 +187,6 @@ def plot_statistics_over_total(measures_df, statistics_df, output_dir: str, mark
 
 
 def plot_memory_over_joules(measures_df, statistics_df, output_dir: str, name:str='memory_over_joules', num_exps_to_plot: int = inf):
-    # Ensure TOTAL is available
-    measures_df['TOTAL'] = measures_df['PKG'] + measures_df['GPU']
     
     # Merge dataframes on 'gen' to align TOTAL and MEMORY
     merged_df = pd.merge(statistics_df, measures_df[['gen', 'TOTAL']], on='gen', how='inner')
