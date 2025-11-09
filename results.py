@@ -46,7 +46,7 @@ def extract_toml_fields(toml_path: str):
 
 
 def extract_csv_values(experiment_dir: str):
-    """Extract total (PKG+GPU) and best_of_gen from experiment CSVs."""
+    """Extract total (PKG+GPU), best_of_gen and time from experiment CSVs."""
     total = np.nan
     best_of_gen = np.nan
     time = np.nan
@@ -98,7 +98,7 @@ def format_df(df: pd.DataFrame) -> pd.DataFrame:
     flat = dnc_df.pivot_table(
         index='instance',
         columns='setting',
-        values=['Fitness', 'MJ'],
+        values=['Fitness', 'MJ', 'Hours'],
         aggfunc='first'  # or 'mean', depending on how you want to combine duplicates
     )
     
@@ -112,18 +112,18 @@ def format_df(df: pd.DataFrame) -> pd.DataFrame:
         "instance",
 
         # (optional) One Point crossover columns
-        "Fitness_kpoint", "MJ_kpoint",
+        "Fitness_kpoint", "MJ_kpoint", "Hours_kpoint",
 
         # DNC bs variations
-        "Fitness_unknown",   "MJ_unknown",
-        "Fitness_bs512_st0", "MJ_bs512_st0",
-        "Fitness_bs1024_st0", "MJ_bs1024_st0",
-        "Fitness_bs2048_st0", "MJ_bs2048_st0",
+        "Fitness_unknown",   "MJ_unknown", "Hours_unknown",
+        "Fitness_bs512_st0", "MJ_bs512_st0", "Hours_bs512_st0",
+        "Fitness_bs1024_st0", "MJ_bs1024_st0", "Hours_bs1024_st0",
+        "Fitness_bs2048_st0", "MJ_bs2048_st0", "Hours_bs2048_st0",
 
         # DNC stability (st) variations
-        "Fitness_bs2048_st0.1", "MJ_bs2048_st0.1",
-        "Fitness_bs2048_st0.01", "MJ_bs2048_st0.01",
-        "Fitness_bs2048_st0.001", "MJ_bs2048_st0.001",
+        "Fitness_bs2048_st0.1", "MJ_bs2048_st0.1", "Hours_bs2048_st0.1",
+        "Fitness_bs2048_st0.01", "MJ_bs2048_st0.01", "Hours_bs2048_st0.01",
+        "Fitness_bs2048_st0.001", "MJ_bs2048_st0.001", "Hours_bs2048_st0.001",
     ] 
 
     # Keep only existing columns from `order`
@@ -140,17 +140,25 @@ def parse_df(df: pd.DataFrame) -> str:
     df = df.round(3)
     mj_cols = [col for col in df.columns if 'MJ' in col and 'unknown' not in col]
     fit_cols = [col for col in df.columns if 'Fitness' in col]
+    time_cols = [col for col in df.columns if 'Hours' in col and 'unknown' not in col]
     for idx, row in df.iterrows():
-        # MIN
+        # MIN, MJ
         mj_vals = row[mj_cols].replace({np.nan: np.inf})
         mj_col = mj_vals.idxmin()
 
         val = row[mj_col]
         if pd.notna(val):
             df.at[idx, mj_col] = f"\\textbf{{{val}}}"
+        
+        # MIN, Hours
+        time_vals = row[time_cols].replace({np.nan: np.inf})
+        time_col = time_vals.idxmin()
 
+        val = row[time_col]
+        if pd.notna(val):
+            df.at[idx, time_col] = f"\\textbf{{{val}}}"
 
-        # MAX
+        # MAX, Fitness
         fit_vals = row[fit_cols].replace({np.nan: np.inf})
         fit_col = fit_vals.idxmax()
 
@@ -160,6 +168,7 @@ def parse_df(df: pd.DataFrame) -> str:
 
 
     # print LaTeX table lines
+    print(df.columns)
     csv_str = ''
     for _, row in df.iterrows():
         vals = [str(v) if pd.notna(v) else "0" for v in row]
@@ -184,6 +193,7 @@ def main(experiments_path: str) -> dict[str, pd.DataFrame]:
             **toml_info,
             "MJ": total,
             "Fitness": best_of_gen,
+            "Hours": time
         }
         df_rows[domain_name].append(row)
 
