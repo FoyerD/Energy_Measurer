@@ -38,7 +38,7 @@ def extract_toml_fields(toml_path: str):
 
     return {
         "domain_name": domain_name,
-        "instance": dataset_name.replace('_', r'\_'),
+        "instance": dataset_name.replace('BPP_', ''),
         "crossover_name": crossover_name,
         "bs": batch_size,
         "ts": training_scheduling,
@@ -148,7 +148,7 @@ def parse_df(df: pd.DataFrame) -> str:
 
         val = row[mj_col]
         if pd.notna(val):
-            df.at[idx, mj_col] = f"\\textbf{{{val}}}"
+            df.at[idx, mj_col] = f"\\textbf{{{val:.2f}}}"
         
         # MIN, Hours
         time_vals = row[time_cols].replace({np.nan: np.inf})
@@ -156,7 +156,7 @@ def parse_df(df: pd.DataFrame) -> str:
 
         val = row[time_col]
         if pd.notna(val):
-            df.at[idx, time_col] = f"\\textbf{{{val}}}"
+            df.at[idx, time_col] = f"\\textbf{{{val:.2f}}}"
 
         # MAX, Fitness
         fit_vals = row[fit_cols].replace({np.nan: np.inf})
@@ -164,14 +164,15 @@ def parse_df(df: pd.DataFrame) -> str:
 
         val = row[fit_col]
         if pd.notna(val):
-            df.at[idx, fit_col] = f"\\textbf{{{val}}}"
+            df.at[idx, fit_col] = f"\\textbf{{{val:.2f}}}"
 
 
     # print LaTeX table lines
     print(df.columns)
     csv_str = ''
     for _, row in df.iterrows():
-        vals = [str(v) if pd.notna(v) else "0" for v in row]
+        vals = [f'{v:.2f}' if pd.notna(v) and (type(v) == type(0.0) or type(v) == type(0)) else v for v in row]
+        vals = [str(v) if pd.notna(v) else "0" for v in vals]
         csv_str += " & ".join(vals) + " \\\\\n"
     return csv_str
 
