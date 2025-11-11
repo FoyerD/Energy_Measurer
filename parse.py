@@ -4,6 +4,7 @@ import csv
 import os
 from statistics import mean
 import pandas as pd
+from functools import reduce
 
 def preprocess_df(df):
     df['time'] = pd.to_numeric(df['time'], errors='coerce')
@@ -130,42 +131,23 @@ def merge_files(measures_dir, statistics_dir, out_dir, base_pkg:float=0.0, base_
         statistics_value_stds[col] = grouped_statistics[col].std().reset_index().fillna(0)
         statistics_value_stds[col].columns = ['gen', f'{col}_std']
 
-    # merging
+    # grouping by gen 
     all_statistics_df['TRAINED'] = all_statistics_df['TRAINED'].astype(bool)
     merged_measures_df = group_df(all_measures_df, 'gen').reset_index()
     merged_statistics_df = group_df(all_statistics_df, 'gen').reset_index()
+    
+    # adding stds
+    measures_cols = ['PKG', 'GPU', 'TOTAL']
+    final_measures_df = reduce(
+            lambda curr_df, col: pd.merge(curr_df, measures_value_stds[col], on='gen', how='left'),
+            measures_cols,
+            merged_measures_df)
 
-    final_measures_df = pd.merge(
-            merged_measures_df,
-            measures_value_stds['PKG'],
-            on='gen',
-            how='left'
-            )
-    final_measures_df = pd.merge(
-            final_measures_df,
-            measures_value_stds['GPU'],
-            on='gen',
-            how='left'
-            )
-    final_measures_df = pd.merge(
-            final_measures_df,
-            measures_value_stds['MEMORY'],
-            on='gen',
-            how='left'
-            )
-    final_measures_df = pd.merge(
-            final_measures_df,
-            measures_value_stds['TOTAL'],
-            on='gen',
-            how='left'
-            )
-    final_statistics_df = pd.merge(
-            merged_statistics_df,
-            statistics_value_stds['best_of_gen'],
-            on='gen',
-            how='left'
-            ).fillna(0)
-
+    statistics_cols = ['best_of_gen']
+    final_statistics_df = reduce(
+            lambda curr_df, col: pd.merge(curr_df, statistics_value_stds[col], on='gen', how='left'),
+            statistics_cols,
+            merged_statistics_df)
 
     final_measures_df.to_csv(os.path.join(out_dir, 'mean_measures.csv'), index=False)
     final_statistics_df.to_csv(os.path.join(out_dir, 'mean_statistics.csv'), index=False)
