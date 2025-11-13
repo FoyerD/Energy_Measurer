@@ -47,9 +47,12 @@ def extract_toml_fields(toml_path: str):
 
 def extract_csv_values(experiment_dir: str):
     """Extract total (PKG+GPU), best_of_gen and time from experiment CSVs."""
-    total = np.nan
-    best_of_gen = np.nan
-    time = np.nan
+    mes_results = {}
+    mes_stds = {}
+    stat_results = {}
+    stat_stds = {}
+    mes_values = ['TOTAL', 'time']
+    stat_values = ['best_of_gen']
 
     measures_path = os.path.join(experiment_dir, "mean_measures.csv")
     stats_path = os.path.join(experiment_dir, "mean_statistics.csv")
@@ -57,20 +60,22 @@ def extract_csv_values(experiment_dir: str):
     if os.path.exists(measures_path):
         try:
             df = pd.read_csv(measures_path)
-            pkg, gpu = df.loc[df.index[-1], ["PKG", "GPU"]]
-            time = df.loc[df.index[-1], "time"]
-            total = float(pkg + gpu)
-        except Exception:
+            for value in mes_values:
+                mes_results[value] = float(df.loc[df.index[-1], value])
+        except Exception as e:
+            print(experiment_dir, e)
             pass
 
     if os.path.exists(stats_path):
         try:
             df = pd.read_csv(stats_path)
-            best_of_gen = float(df.loc[df.index[-1], "best_of_gen"])
-        except Exception:
+            for value in stat_values:
+                stat_results[value] = float(df.loc[df.index[-1], value])
+        except Exception as e:
+            print(experiment_dir, e)
             pass
 
-    return total / 10**6, best_of_gen, time / 60**2
+    return mes_results, mes_stds, stat_results, stat_stds
 
 
 def format_df(df: pd.DataFrame) -> pd.DataFrame:
@@ -137,38 +142,40 @@ def format_df(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def parse_df(df: pd.DataFrame) -> str:
-    df = df.round(3)
+    df = df.round(2)
     mj_cols = [col for col in df.columns if 'MJ' in col and 'unknown' not in col]
     fit_cols = [col for col in df.columns if 'Fitness' in col]
     time_cols = [col for col in df.columns if 'Hours' in col and 'unknown' not in col]
     for idx, row in df.iterrows():
-        # MIN, MJ
+        # --- MIN, MJ ---
         mj_vals = row[mj_cols].replace({np.nan: np.inf})
-        mj_col = mj_vals.idxmin()
-
-        val = row[mj_col]
-        if pd.notna(val):
-            df.at[idx, mj_col] = f"\\textbf{{{val:.2f}}}"
-        
-        # MIN, Hours
+        min_val = mj_vals.min()
+        min_cols = mj_vals[mj_vals == min_val].index
+        for col in min_cols:
+            val = row[col]
+            if pd.notna(val):
+                df.at[idx, col] = f"\\textbf{{{val:.2f}}}"
+    
+        # --- MIN, Hours ---
         time_vals = row[time_cols].replace({np.nan: np.inf})
-        time_col = time_vals.idxmin()
-
-        val = row[time_col]
-        if pd.notna(val):
-            df.at[idx, time_col] = f"\\textbf{{{val:.2f}}}"
-
-        # MAX, Fitness
-        fit_vals = row[fit_cols].replace({np.nan: np.inf})
-        fit_col = fit_vals.idxmax()
-
-        val = row[fit_col]
-        if pd.notna(val):
-            df.at[idx, fit_col] = f"\\textbf{{{val:.2f}}}"
+        min_val = time_vals.min()
+        min_cols = time_vals[time_vals == min_val].index
+        for col in min_cols:
+            val = row[col]
+            if pd.notna(val):
+                df.at[idx, col] = f"\\textbf{{{val:.2f}}}"
+    
+        # --- MAX, Fitness ---
+        fit_vals = row[fit_cols].replace({np.nan: -np.inf})  # fix: -inf for max
+        max_val = fit_vals.max()
+        max_cols = fit_vals[fit_vals == max_val].index
+        for col in max_cols:
+            val = row[col]
+            if pd.notna(val):
+                df.at[idx, col] = f"\\textbf{{{val:.2f}}}"
 
 
     # print LaTeX table lines
-    print(df.columns)
     csv_str = ''
     for _, row in df.iterrows():
         vals = [f'{v:.2f}' if pd.notna(v) and (type(v) == type(0.0) or type(v) == type(0)) else v for v in row]
@@ -189,12 +196,12 @@ def main(experiments_path: str) -> dict[str, pd.DataFrame]:
         toml_info = extract_toml_fields(toml_path)
         domain_name = toml_info['domain_name']
         #toml_info.pop('domain_name')
-        total, best_of_gen, time = extract_csv_values(root)
+        mes_results, mes_stds, stat_results, stat_stds = extract_csv_values(root)
         row = {
             **toml_info,
-            "MJ": total,
-            "Fitness": best_of_gen,
-            "Hours": time
+            "MJ": mes_results['TOTAL'] / 10**6,
+            "Fitness": stat_results['best_of_gen'],
+            "Hours": mes_results['time'] / 60**2,
         }
         df_rows[domain_name].append(row)
 
