@@ -51,29 +51,37 @@ def extract_csv_values(experiment_dir: str):
     mes_stds = {}
     stat_results = {}
     stat_stds = {}
-    mes_values = ['TOTAL', 'time']
-    stat_values = ['best_of_gen']
+    mes_values = ['TOTAL']
+    stat_values = ['best_of_gen', 'time']
+    mes_transform = {'TOTAL': lambda x: x / 10**6}
+    stat_transform = {'time': lambda x: x / 60**2}
 
     measures_path = os.path.join(experiment_dir, "mean_measures.csv")
     stats_path = os.path.join(experiment_dir, "mean_statistics.csv")
 
     if os.path.exists(measures_path):
-        try:
-            df = pd.read_csv(measures_path)
-            for value in mes_values:
-                mes_results[value] = float(df.loc[df.index[-1], value])
-        except Exception as e:
-            print(experiment_dir, e)
-            pass
+        df = pd.read_csv(measures_path)
+        for value in mes_values:
+            std_col = f'{value}_std'
+
+            if value in mes_transform.keys():
+                df[value] = mes_transform[value](df[value])
+                df[std_col] = mes_transform[value](df[std_col])
+
+            mes_results[value] = float(df.loc[df.index[-1], value])
+            mes_stds[value] = df.loc[df.index[-1], std_col]
 
     if os.path.exists(stats_path):
-        try:
-            df = pd.read_csv(stats_path)
-            for value in stat_values:
-                stat_results[value] = float(df.loc[df.index[-1], value])
-        except Exception as e:
-            print(experiment_dir, e)
-            pass
+        df = pd.read_csv(stats_path)
+        for value in stat_values:
+            std_col = f'{value}_std'
+
+            if value in stat_transform.keys():
+                df[value] = stat_transform[value](df[value])
+                df[std_col] = stat_transform[value](df[std_col])
+
+            stat_results[value] = float(df.loc[df.index[-1], value])
+            stat_stds[value] = df.loc[df.index[-1], std_col]
 
     return mes_results, mes_stds, stat_results, stat_stds
 
@@ -103,7 +111,7 @@ def format_df(df: pd.DataFrame) -> pd.DataFrame:
     flat = dnc_df.pivot_table(
         index='instance',
         columns='setting',
-        values=['Fitness', 'MJ', 'Hours'],
+        values=['Fitness', 'MJ', 'Hours', 'Fitness_std', 'MJ_std', 'Hours_std'],
         aggfunc='first'  # or 'mean', depending on how you want to combine duplicates
     )
     
@@ -136,9 +144,75 @@ def format_df(df: pd.DataFrame) -> pd.DataFrame:
     # Add any leftover columns (to avoid losing data)
     remaining_cols = [c for c in flat.columns if c not in existing_cols]
     
-    return flat[existing_cols + remaining_cols]
+    return flat[existing_cols]
 
+def format_df_stds(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Flatten a DataFrame so that for each 'instance',
+    there is a separate column for each combination of 'bs' or 'ts'
+    when crossover_name == 'dnc'.
+    Produces columns like Fitness_bs512, MJ_bs512, Fitness_ts0.001, MJ_ts0.001, etc.
+    """
+    # Keep only DNC rows
+    dnc_df = df.copy()
+
+    # Create a 'setting' column describing each config
+    def make_label(r):
+        label_parts = []
+        if pd.notna(r['bs']):
+            label_parts.append(f"bs{int(r['bs'])}")
+        if pd.notna(r['ts']):
+            label_parts.append(f"st{r['ts']:.6g}")
+        return "_".join(label_parts) if label_parts else "unknown"
+
+    dnc_df['setting'] = dnc_df.apply(make_label, axis=1)
+
+    # Pivot: create separate Fitness and MJ columns per setting
+    flat = dnc_df.pivot_table(
+        index='instance',
+        columns='setting',
+        values=['Fitness', 'MJ', 'Hours', 'Fitness_std', 'MJ_std', 'Hours_std'],
+        aggfunc='first'  # or 'mean', depending on how you want to combine duplicates
+    )
     
+
+    # Flatten multiindex columns
+    flat.columns = [f"{metric}_{setting}" for metric, setting in flat.columns]
+    flat = flat.reset_index()
+
+
+    order = [
+        "instance",
+
+        # (optional) One Point crossover columns
+        "Fitness_kpoint", "MJ_kpoint", "Hours_kpoint",
+
+        # DNC bs variations
+        "Fitness_unknown",   "MJ_unknown", "Hours_unknown",
+        "Fitness_bs512_st0", "MJ_bs512_st0", "Hours_bs512_st0",
+        "Fitness_bs1024_st0", "MJ_bs1024_st0", "Hours_bs1024_st0",
+        "Fitness_bs2048_st0", "MJ_bs2048_st0", "Hours_bs2048_st0",
+
+        # DNC stability (st) variations
+        "Fitness_bs2048_st0.1", "MJ_bs2048_st0.1", "Hours_bs2048_st0.1",
+        "Fitness_bs2048_st0.01", "MJ_bs2048_st0.01", "Hours_bs2048_st0.01",
+        "Fitness_bs2048_st0.001", "MJ_bs2048_st0.001", "Hours_bs2048_st0.001",
+    ] 
+    expanded_order = []
+    for col in order:
+        expanded_order.append(col)
+        if col != "instance":  # skip instance
+            expanded_order.append(col.replace("Fitness", "Fitness_std") if "Fitness" in col else
+                                  col.replace("MJ", "MJ_std") if "MJ" in col else
+                                  col.replace("Hours", "Hours_std"))
+
+    # Keep only existing columns from `order`
+    existing_cols = [c for c in expanded_order if c in flat.columns]
+    # Add any leftover columns (to avoid losing data)
+    remaining_cols = [c for c in flat.columns if c not in existing_cols]
+    
+    print(existing_cols)
+    return flat[existing_cols]   
 
 
 def parse_df(df: pd.DataFrame) -> str:
@@ -199,14 +273,19 @@ def main(experiments_path: str) -> dict[str, pd.DataFrame]:
         mes_results, mes_stds, stat_results, stat_stds = extract_csv_values(root)
         row = {
             **toml_info,
-            "MJ": mes_results['TOTAL'] / 10**6,
+            "MJ": mes_results['TOTAL'],
+            "MJ_std": mes_stds['TOTAL'],
             "Fitness": stat_results['best_of_gen'],
-            "Hours": mes_results['time'] / 60**2,
+            "Fitness_std": stat_stds['best_of_gen'],
+            "Hours": stat_results['time'],
+            "Hours_std": stat_stds['time'],
         }
         df_rows[domain_name].append(row)
 
     dfs = {domain_name: pd.DataFrame(df_rows[domain_name]) for domain_name in df_rows if len(df_rows[domain_name]) > 0}
     formated_dfs = {domain_name: format_df(dfs[domain_name]) for domain_name in dfs}
+    formated_dfs_stds = {f'{domain_name}_std': format_df_stds(dfs[domain_name]) for domain_name in dfs}
+    formated_dfs.update(formated_dfs_stds)
     return formated_dfs
 
 

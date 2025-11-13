@@ -101,7 +101,7 @@ def merge_files(measures_dir, statistics_dir, out_dir, base_pkg:float=0.0, base_
             statistics.append(preprocess_df(curr_df))
     
     if len(measures) != len(statistics):
-            raise RuntimeError("The number of measures and statistics files must be the same")
+        raise RuntimeError(f"The number of measures and statistics files must be the same\nstat:{len(statistics)}, mes: {len(measures)}")
     
     
     
@@ -118,7 +118,7 @@ def merge_files(measures_dir, statistics_dir, out_dir, base_pkg:float=0.0, base_
 
     # getting the std of columns
     measures_value_stds = {'PKG': 0, 'GPU': 0, 'MEMORY': 0, 'TOTAL': 0}
-    statistics_value_stds = {'best_of_gen': 0}
+    statistics_value_stds = {'best_of_gen': 0, 'time': 0}
 
     grouped_mesures = all_measures_df.groupby('gen')
     grouped_statistics = all_statistics_df.groupby('gen')
@@ -137,16 +137,14 @@ def merge_files(measures_dir, statistics_dir, out_dir, base_pkg:float=0.0, base_
     merged_statistics_df = group_df(all_statistics_df, 'gen').reset_index()
     
     # adding stds
-    measures_cols = ['PKG', 'GPU', 'TOTAL']
     final_measures_df = reduce(
             lambda curr_df, col: pd.merge(curr_df, measures_value_stds[col], on='gen', how='left'),
-            measures_cols,
+            measures_value_stds.keys(),
             merged_measures_df)
 
-    statistics_cols = ['best_of_gen']
     final_statistics_df = reduce(
             lambda curr_df, col: pd.merge(curr_df, statistics_value_stds[col], on='gen', how='left'),
-            statistics_cols,
+            statistics_value_stds.keys(),
             merged_statistics_df)
 
     final_measures_df.to_csv(os.path.join(out_dir, 'mean_measures.csv'), index=False)
