@@ -211,15 +211,16 @@ def format_df_stds(df: pd.DataFrame) -> pd.DataFrame:
     # Add any leftover columns (to avoid losing data)
     remaining_cols = [c for c in flat.columns if c not in existing_cols]
     
-    print(existing_cols)
     return flat[existing_cols]   
 
 
 def parse_df(df: pd.DataFrame) -> str:
     df = df.round(2)
-    mj_cols = [col for col in df.columns if 'MJ' in col and 'unknown' not in col]
-    fit_cols = [col for col in df.columns if 'Fitness' in col]
-    time_cols = [col for col in df.columns if 'Hours' in col and 'unknown' not in col]
+    mj_cols = [col for col in df.columns if 'MJ' in col and 'unknown' not in col and 'std' not in col]
+    fit_cols = [col for col in df.columns if 'Fitness' in col and 'std' not in col]
+    time_cols = [col for col in df.columns if 'Hours' in col and 'unknown' not in col and 'std' not in col]
+    std_cols = [col for col in df.columns if 'std' in col]
+
     for idx, row in df.iterrows():
         # --- MIN, MJ ---
         mj_vals = row[mj_cols].replace({np.nan: np.inf})
@@ -247,9 +248,24 @@ def parse_df(df: pd.DataFrame) -> str:
             val = row[col]
             if pd.notna(val):
                 df.at[idx, col] = f"\\textbf{{{val:.2f}}}"
+   
 
+    # --- Combine std values into base columns ---
+    for std_col in std_cols:
+        base_col = std_col.replace("_std", "")
+        if base_col in df.columns:
+            for idx, row in df.iterrows():
+                val = row[base_col]
+                std_val = row[std_col]
+                if pd.notna(val) and pd.notna(std_val):
+                    df.at[idx, base_col] = f"{val} ({std_val})"
+                elif pd.notna(val):
+                    df.at[idx, base_col] = f"{val}"
+            # Optionally drop std column
 
     # print LaTeX table lines
+    df = df.drop(columns=std_cols)
+    print(df.columns)
     csv_str = ''
     for _, row in df.iterrows():
         vals = [f'{v:.2f}' if pd.notna(v) and (type(v) == type(0.0) or type(v) == type(0)) else v for v in row]
