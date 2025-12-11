@@ -1,0 +1,22 @@
+[domain]
+    name='graph_coloring'
+    [domain.args]
+        graph_path = "datasets_dnc/graph_coloring/games120.col"
+
+[crossover]
+    name='kpoint'
+    [crossover.args]
+        probability = 0.5
+        k = 1
+        arity = 2
+
+[mutation]
+    name='uniform'
+    [mutation.args]
+        probability = 0.5
+        probability_for_each = 0.1
+        arity = 1
+
+[evolution]
+    max_generation = 6000
+    population_size = 100

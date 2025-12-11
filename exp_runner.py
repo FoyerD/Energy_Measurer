@@ -106,7 +106,8 @@ def main(output_dir:str, setup_file:str=None):
     else:
         statistics_logger.update_column("TRAINED", lambda: False)
 
-    # Start the experiment
+    print(f"----------{setup_file}----------")
+    # Start the experimen{config
     evo_algo.evolve()
     evo_algo.execute()
     
