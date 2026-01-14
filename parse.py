@@ -58,7 +58,7 @@ def parse_statistics(statistics_file:str, output_dir:str):
     measures = ''.join(lines).split('###')
     for i, measure in enumerate(measures):
         with open(os.path.join(output_dir, f'statistics_{i}.csv'), 'a') as f:
-            f.write(measure)
+            f.write(measure.strip())
         
 
 def group_df(df: pd.DataFrame, key_col: str):
