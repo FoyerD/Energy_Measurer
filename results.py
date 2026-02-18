@@ -171,7 +171,7 @@ def format_df_stds(df: pd.DataFrame) -> pd.DataFrame:
     flat = dnc_df.pivot_table(
         index='instance',
         columns='setting',
-        values=['Fitness', 'MJ', 'Hours', 'Fitness_std', 'MJ_std', 'Hours_std', 'Fitness/MJ', 'Fitness/MJ_std'],
+        values=['Fitness', 'MJ', 'Hours', 'Fitness_std', 'MJ_std', 'Hours_std', 'Fit/MJ', 'Fit/MJ_std'],
         aggfunc='first'
     )
     
@@ -188,15 +188,15 @@ def format_df_stds(df: pd.DataFrame) -> pd.DataFrame:
         "Fitness_kpoint", "MJ_kpoint", "Hours_kpoint", "Fitness/MJ_kpoint",
 
         # DNC bs variations
-        "Fitness_unknown",   "MJ_unknown", "Hours_unknown", "Fitness/MJ_unknown",
-        "Fitness_bs512_st0", "MJ_bs512_st0", "Hours_bs512_st0", "Fitness/MJ_bs512_st0",
-        "Fitness_bs1024_st0", "MJ_bs1024_st0", "Hours_bs1024_st0", "Fitness/MJ_bs1024_st0",
-        "Fitness_bs2048_st0", "MJ_bs2048_st0", "Hours_bs2048_st0", "Fitness/MJ_bs2048_st0",
+        "Fitness_unknown",   "MJ_unknown", "Hours_unknown", "Fit/MJ_unknown",
+        "Fitness_bs512_st0", "MJ_bs512_st0", "Hours_bs512_st0", "Fit/MJ_bs512_st0",
+        "Fitness_bs1024_st0", "MJ_bs1024_st0", "Hours_bs1024_st0", "Fit/MJ_bs1024_st0",
+        "Fitness_bs2048_st0", "MJ_bs2048_st0", "Hours_bs2048_st0", "Fit/MJ_bs2048_st0",
 
         # DNC stability (st) variations
-        "Fitness_bs2048_st0.1", "MJ_bs2048_st0.1", "Hours_bs2048_st0.1", "Fitness/MJ_bs2048_st0.1",
-        "Fitness_bs2048_st0.01", "MJ_bs2048_st0.01", "Hours_bs2048_st0.01", "Fitness/MJ_bs2048_st0.01",
-        "Fitness_bs2048_st0.001", "MJ_bs2048_st0.001", "Hours_bs2048_st0.001", "Fitness/MJ_bs2048_st0.001",
+        "Fitness_bs2048_st0.1", "MJ_bs2048_st0.1", "Hours_bs2048_st0.1", "Fit/MJ_bs2048_st0.1",
+        "Fitness_bs2048_st0.01", "MJ_bs2048_st0.01", "Hours_bs2048_st0.01", "Fit/MJ_bs2048_st0.01",
+        "Fitness_bs2048_st0.001", "MJ_bs2048_st0.001", "Hours_bs2048_st0.001", "Fit/MJ_bs2048_st0.001",
     ] 
     expanded_order = []
     for col in order:
@@ -220,6 +220,8 @@ def parse_df(df: pd.DataFrame) -> str:
     fit_cols = [col for col in df.columns if 'Fitness' in col and 'std' not in col]
     time_cols = [col for col in df.columns if 'Hours' in col and 'unknown' not in col and 'std' not in col]
     std_cols = [col for col in df.columns if 'std' in col]
+    ratio_cols = [col for col in df.columns if 'Fit/MJ' in col and 'std' not in col]
+    std_ratio_cols = [col for col in df.columns if 'Fit/MJ_std' in col]
 
     for idx, row in df.iterrows():
         # --- MIN, MJ ---
@@ -244,6 +246,15 @@ def parse_df(df: pd.DataFrame) -> str:
         fit_vals = row[fit_cols].replace({np.nan: -np.inf})  # fix: -inf for max
         max_val = fit_vals.max()
         max_cols = fit_vals[fit_vals == max_val].index
+        for col in max_cols:
+            val = row[col]
+            if pd.notna(val):
+                df.at[idx, col] = f"\\textbf{{{val:.2f}}}"
+
+        # --- MAX, Fit/MJ ---
+        ratio_vals = row[ratio_cols].replace({np.nan: -np.inf})
+        max_val = ratio_vals.max()
+        max_cols = ratio_vals[ratio_vals == max_val].index
         for col in max_cols:
             val = row[col]
             if pd.notna(val):
