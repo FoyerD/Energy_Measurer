@@ -1,5 +1,4 @@
 import os
-import stat
 import sys
 import tomllib
 import pandas as pd
@@ -144,8 +143,6 @@ def format_df(df: pd.DataFrame) -> pd.DataFrame:
 
     # Keep only existing columns from `order`
     existing_cols = [c for c in order if c in flat.columns]
-    # Add any leftover columns (to avoid losing data)
-    remaining_cols = [c for c in flat.columns if c not in existing_cols]
     
     return flat[existing_cols]
 
@@ -174,7 +171,7 @@ def format_df_stds(df: pd.DataFrame) -> pd.DataFrame:
     flat = dnc_df.pivot_table(
         index='instance',
         columns='setting',
-        values=['Fitness', 'MJ', 'Hours', 'Fitness_std', 'MJ_std', 'Hours_std'],
+        values=['Fitness', 'MJ', 'Hours', 'Fitness_std', 'MJ_std', 'Hours_std', 'Fitness/MJ', 'Fitness/MJ_std'],
         aggfunc='first'
     )
     
@@ -188,18 +185,18 @@ def format_df_stds(df: pd.DataFrame) -> pd.DataFrame:
         "instance",
 
         # (optional) One Point crossover columns
-        "Fitness_kpoint", "MJ_kpoint", "Hours_kpoint",
+        "Fitness_kpoint", "MJ_kpoint", "Hours_kpoint", "Fitness/MJ_kpoint",
 
         # DNC bs variations
-        "Fitness_unknown",   "MJ_unknown", "Hours_unknown",
-        "Fitness_bs512_st0", "MJ_bs512_st0", "Hours_bs512_st0",
-        "Fitness_bs1024_st0", "MJ_bs1024_st0", "Hours_bs1024_st0",
-        "Fitness_bs2048_st0", "MJ_bs2048_st0", "Hours_bs2048_st0",
+        "Fitness_unknown",   "MJ_unknown", "Hours_unknown", "Fitness/MJ_unknown",
+        "Fitness_bs512_st0", "MJ_bs512_st0", "Hours_bs512_st0", "Fitness/MJ_bs512_st0",
+        "Fitness_bs1024_st0", "MJ_bs1024_st0", "Hours_bs1024_st0", "Fitness/MJ_bs1024_st0",
+        "Fitness_bs2048_st0", "MJ_bs2048_st0", "Hours_bs2048_st0", "Fitness/MJ_bs2048_st0",
 
         # DNC stability (st) variations
-        "Fitness_bs2048_st0.1", "MJ_bs2048_st0.1", "Hours_bs2048_st0.1",
-        "Fitness_bs2048_st0.01", "MJ_bs2048_st0.01", "Hours_bs2048_st0.01",
-        "Fitness_bs2048_st0.001", "MJ_bs2048_st0.001", "Hours_bs2048_st0.001",
+        "Fitness_bs2048_st0.1", "MJ_bs2048_st0.1", "Hours_bs2048_st0.1", "Fitness/MJ_bs2048_st0.1",
+        "Fitness_bs2048_st0.01", "MJ_bs2048_st0.01", "Hours_bs2048_st0.01", "Fitness/MJ_bs2048_st0.01",
+        "Fitness_bs2048_st0.001", "MJ_bs2048_st0.001", "Hours_bs2048_st0.001", "Fitness/MJ_bs2048_st0.001",
     ] 
     expanded_order = []
     for col in order:
