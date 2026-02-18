@@ -1,4 +1,5 @@
 import os
+import stat
 import sys
 import tomllib
 import pandas as pd
@@ -52,7 +53,7 @@ def extract_csv_values(experiment_dir: str):
     stat_results = {}
     stat_stds = {}
     mes_values = ['TOTAL']
-    stat_values = ['best_of_gen', 'time']
+    stat_values = ['best_of_gen', 'time', 'best_of_gen/TOTAL']
     mes_transform = {'TOTAL': lambda x: x / 10**6}
     stat_transform = {'time': lambda x: x / 60**2}
 
@@ -70,6 +71,8 @@ def extract_csv_values(experiment_dir: str):
 
             mes_results[value] = float(df.loc[df.index[-1], value])
             mes_stds[value] = df.loc[df.index[-1], std_col]
+
+            
 
     if os.path.exists(stats_path):
         df = pd.read_csv(stats_path)
@@ -112,7 +115,7 @@ def format_df(df: pd.DataFrame) -> pd.DataFrame:
         index='instance',
         columns='setting',
         values=['Fitness', 'MJ', 'Hours', 'Fitness_std', 'MJ_std', 'Hours_std'],
-        aggfunc='first'  # or 'mean', depending on how you want to combine duplicates
+        aggfunc='first'
     )
     
 
@@ -172,7 +175,7 @@ def format_df_stds(df: pd.DataFrame) -> pd.DataFrame:
         index='instance',
         columns='setting',
         values=['Fitness', 'MJ', 'Hours', 'Fitness_std', 'MJ_std', 'Hours_std'],
-        aggfunc='first'  # or 'mean', depending on how you want to combine duplicates
+        aggfunc='first'
     )
     
 
@@ -295,6 +298,8 @@ def main(experiments_path: str) -> dict[str, pd.DataFrame]:
             "Fitness_std": stat_stds['best_of_gen'],
             "Hours": stat_results['time'],
             "Hours_std": stat_stds['time'],
+            "Fitness/MJ": stat_results['best_of_gen/TOTAL'] if 'best_of_gen/TOTAL' in stat_results else np.nan,
+            "Fitness/MJ_std": stat_stds['best_of_gen/TOTAL'] if 'best_of_gen/TOTAL' in stat_stds else np.nan,
         }
         df_rows[domain_name].append(row)
 

@@ -102,12 +102,14 @@ def merge_files(measures_dir, statistics_dir, out_dir, base_pkg:float=0.0, base_
     
     if len(measures) != len(statistics):
         raise RuntimeError(f"The number of measures and statistics files must be the same\nstat:{len(statistics)}, mes: {len(measures)}")
+
     
     
     
     # adding gen column to each measures df based on corresponding statistics df
     for measure_df, statistics_df in zip(measures, statistics):
         gened_measures_df, gened_statistics_df = add_gen_to_df(measure_df, statistics_df)
+        gened_statistics_df['best_of_gen/TOTAL'] = gened_statistics_df['best_of_gen'] / (gened_measures_df['TOTAL'] / 10**6)
         gened_measures.append(gened_measures_df)
         gened_statistics.append(gened_statistics_df)
         
@@ -116,9 +118,10 @@ def merge_files(measures_dir, statistics_dir, out_dir, base_pkg:float=0.0, base_
     all_statistics_df = pd.concat(gened_statistics).reset_index(drop=True)
     all_statistics_df['best_of_gen'] = all_statistics_df['best_of_gen'].astype(float)
 
+    
     # getting the std of columns
     measures_value_stds = {'PKG': 0, 'GPU': 0, 'MEMORY': 0, 'TOTAL': 0}
-    statistics_value_stds = {'best_of_gen': 0, 'time': 0}
+    statistics_value_stds = {'best_of_gen': 0, 'time': 0, 'best_of_gen/TOTAL': 0}
 
     grouped_mesures = all_measures_df.groupby('gen')
     grouped_statistics = all_statistics_df.groupby('gen')
