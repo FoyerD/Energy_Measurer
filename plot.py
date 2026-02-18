@@ -317,7 +317,7 @@ def plot_ratio_over_gen(measures_df, statistics_df, output_dir: str, name:str='r
 def main(measures_file:str, statistics_file:str, output_dir:str, num_exps_to_plot: int, min_gen:int=-inf, max_gen:int=inf):
     measures_df = pd.read_csv(measures_file)
     statistics_df = pd.read_csv(statistics_file)
-    statistics_df = statistics_df[statistics_df['best_of_gen'] > 0]
+    statistics_df = statistics_df[statistics_df['best_of_gen'] > 0][statistics_df['best_of_gen'] <= 100]
     statistics_df['TRAINED'] = statistics_df['TRAINED'].apply(ast.literal_eval)
 
     measures_df['PKG'] = measures_df['PKG'] / 1e6
