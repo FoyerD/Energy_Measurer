@@ -109,7 +109,7 @@ def merge_files(measures_dir, statistics_dir, out_dir, base_pkg:float=0.0, base_
     # adding gen column to each measures df based on corresponding statistics df
     for measure_df, statistics_df in zip(measures, statistics):
         gened_measures_df, gened_statistics_df = add_gen_to_df(measure_df, statistics_df)
-        gened_statistics_df['best_of_gen/TOTAL'] = gened_statistics_df['best_of_gen'] / (gened_measures_df['TOTAL'] / 10**6)
+        gened_statistics_df['best_of_gen/TOTAL'] = gened_statistics_df['best_of_gen'] / gened_measures_df['TOTAL']
         gened_measures.append(gened_measures_df)
         gened_statistics.append(gened_statistics_df)
         
