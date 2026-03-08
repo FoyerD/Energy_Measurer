@@ -1,10 +1,9 @@
-import os
-import sys
-import tomllib
+
 import pandas as pd
+import sys
+import os
+import tomllib
 import numpy as np
-import warnings
-warnings.filterwarnings("ignore")
 
 def extract_toml_fields(toml_path: str):
     """Extract relevant fields from the .toml file, handling different domains and crossovers."""
@@ -46,15 +45,17 @@ def extract_toml_fields(toml_path: str):
 
 
 def extract_csv_values(experiment_dir: str):
-    """Extract total (PKG+GPU), best_of_gen and time from experiment CSVs."""
+    """Extract total (PKG+GPU), GPU, PKG, best_of_gen and time from experiment CSVs."""
     mes_results = {}
     mes_stds = {}
     stat_results = {}
     stat_stds = {}
-    mes_values = ['TOTAL']
+
+    mes_values = ['TOTAL', 'GPU', 'PKG']
     stat_values = ['best_of_gen', 'time', 'best_of_gen/TOTAL']
-    mes_transform = {'TOTAL': lambda x: x / 10**6}
-    stat_transform = {'time': lambda x: x / 60**2}
+
+    mes_transform = {'TOTAL': lambda x: x / 10**6, 'GPU': lambda x: x / 10**6, 'PKG': lambda x: x / 10**6}
+    stat_transform = {'time': lambda x: x / 60**2, 'best_of_gen/TOTAL': lambda x: x * 10**6}
 
     measures_path = os.path.join(experiment_dir, "mean_measures.csv")
     stats_path = os.path.join(experiment_dir, "mean_statistics.csv")
@@ -88,206 +89,38 @@ def extract_csv_values(experiment_dir: str):
     return mes_results, mes_stds, stat_results, stat_stds
 
 
-def format_df(df: pd.DataFrame) -> pd.DataFrame:
+def make_row(toml_info: dict, mes_results: dict, mes_stds: dict, stat_results: dict, stat_stds: dict):
+    row = {
+        **toml_info,
+        "MJ": mes_results.get("TOTAL", np.nan),
+        "MJ-std": mes_stds.get("TOTAL", np.nan),
+        "Fitness": stat_results.get("best_of_gen", np.nan),
+        "Fitness-std": stat_stds.get("best_of_gen", np.nan),
+        "Hours": stat_results.get("time", np.nan),
+        "Hours-std": stat_stds.get("time", np.nan),
+        "MJ/Fitness": stat_results.get("best_of_gen/TOTAL", np.nan),
+        "MJ/Fitness-std": stat_stds.get("best_of_gen/TOTAL", np.nan),
+    }
+    return row
+
+def get_data(experiments_path: str, domains: list[str]) -> dict[str, pd.DataFrame]: 
     """
-    Flatten a DataFrame so that for each 'instance',
-    there is a separate column for each combination of 'bs' or 'ts'
-    when crossover_name == 'dnc'.
-    Produces columns like Fitness_bs512, MJ_bs512, Fitness_ts0.001, MJ_ts0.001, etc.
+Returns a dict with dfs, each row corresponding to an experiment, and columns for:
+- domain_name
+- instance
+- crossover_name
+- bs (if applicable, else NaN)
+- ts (if applicable, else NaN)
+- MJ
+- MJ-std
+- Fitness
+- Fitness-std
+- Hours
+- Hours-std
+- MJ/Fitness
+- MJ/Fitness-std
     """
-    # Keep only DNC rows
-    dnc_df = df.copy()
-
-    # Create a 'setting' column describing each config
-    def make_label(r):
-        label_parts = []
-        if pd.notna(r['bs']):
-            label_parts.append(f"bs{int(r['bs'])}")
-        if pd.notna(r['ts']):
-            label_parts.append(f"st{r['ts']:.6g}")
-        return "_".join(label_parts) if label_parts else "unknown"
-
-    dnc_df['setting'] = dnc_df.apply(make_label, axis=1)
-
-    # Pivot: create separate Fitness and MJ columns per setting
-    flat = dnc_df.pivot_table(
-        index='instance',
-        columns='setting',
-        values=['Fitness', 'MJ', 'Hours', 'Fit/MJ', 'Fitness_std', 'MJ_std', 'Hours_std', 'Fit/MJ_std'],
-        aggfunc='first'
-    )
-    
-
-    # Flatten multiindex columns
-    flat.columns = [f"{metric}_{setting}" for metric, setting in flat.columns]
-    flat = flat.reset_index()
-
-
-    order = [
-        "instance",
-
-        # (optional) One Point crossover columns
-        "Fitness_kpoint", "MJ_kpoint", "Hours_kpoint", "Fit/MJ_kpoint",
-
-        # DNC bs variations
-        "Fitness_unknown",   "MJ_unknown", "Hours_unknown", "Fit/MJ_unknown",
-        "Fitness_bs512_st0", "MJ_bs512_st0", "Hours_bs512_st0", "Fit/MJ_bs512_st0",
-        "Fitness_bs1024_st0", "MJ_bs1024_st0", "Hours_bs1024_st0", "Fit/MJ_bs1024_st0",
-        "Fitness_bs2048_st0", "MJ_bs2048_st0", "Hours_bs2048_st0", "Fit/MJ_bs2048_st0",
-
-        # DNC stability (st) variations
-        "Fitness_bs2048_st0.1", "MJ_bs2048_st0.1", "Hours_bs2048_st0.1", "Fit/MJ_bs2048_st0.1",
-        "Fitness_bs2048_st0.01", "MJ_bs2048_st0.01", "Hours_bs2048_st0.01", "Fit/MJ_bs2048_st0.01",
-        "Fitness_bs2048_st0.001", "MJ_bs2048_st0.001", "Hours_bs2048_st0.001", "Fit/MJ_bs2048_st0.001",
-    ] 
-
-    # Keep only existing columns from `order`
-    existing_cols = [c for c in order if c in flat.columns]
-    
-    return flat[existing_cols]
-
-def format_df_stds(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Flatten a DataFrame so that for each 'instance',
-    there is a separate column for each combination of 'bs' or 'ts'
-    when crossover_name == 'dnc'.
-    Produces columns like Fitness_bs512, MJ_bs512, Fitness_ts0.001, MJ_ts0.001, etc.
-    """
-    # Keep only DNC rows
-    dnc_df = df.copy()
-
-    # Create a 'setting' column describing each config
-    def make_label(r):
-        label_parts = []
-        if pd.notna(r['bs']):
-            label_parts.append(f"bs{int(r['bs'])}")
-        if pd.notna(r['ts']):
-            label_parts.append(f"st{r['ts']:.6g}")
-        return "_".join(label_parts) if label_parts else "unknown"
-
-    dnc_df['setting'] = dnc_df.apply(make_label, axis=1)
-
-    # Pivot: create separate Fitness and MJ columns per setting
-    flat = dnc_df.pivot_table(
-        index='instance',
-        columns='setting',
-        values=['Fitness', 'MJ', 'Hours', 'Fitness_std', 'MJ_std', 'Hours_std', 'Fit/MJ', 'Fit/MJ_std'],
-        aggfunc='first'
-    )
-    
-
-    # Flatten multiindex columns
-    flat.columns = [f"{metric}_{setting}" for metric, setting in flat.columns]
-    flat = flat.reset_index()
-
-
-    order = [
-        "instance",
-
-        # (optional) One Point crossover columns
-        "Fitness_kpoint", "MJ_kpoint", "Hours_kpoint", "Fitness/MJ_kpoint",
-
-        # DNC bs variations
-        "Fitness_unknown",   "MJ_unknown", "Hours_unknown", "Fit/MJ_unknown",
-        "Fitness_bs512_st0", "MJ_bs512_st0", "Hours_bs512_st0", "Fit/MJ_bs512_st0",
-        "Fitness_bs1024_st0", "MJ_bs1024_st0", "Hours_bs1024_st0", "Fit/MJ_bs1024_st0",
-        "Fitness_bs2048_st0", "MJ_bs2048_st0", "Hours_bs2048_st0", "Fit/MJ_bs2048_st0",
-
-        # DNC stability (st) variations
-        "Fitness_bs2048_st0.1", "MJ_bs2048_st0.1", "Hours_bs2048_st0.1", "Fit/MJ_bs2048_st0.1",
-        "Fitness_bs2048_st0.01", "MJ_bs2048_st0.01", "Hours_bs2048_st0.01", "Fit/MJ_bs2048_st0.01",
-        "Fitness_bs2048_st0.001", "MJ_bs2048_st0.001", "Hours_bs2048_st0.001", "Fit/MJ_bs2048_st0.001",
-    ] 
-    expanded_order = []
-    for col in order:
-        expanded_order.append(col)
-        if col != "instance":  # skip instance
-            expanded_order.append(col.replace("Fitness", "Fitness_std") if "Fitness" in col else
-                                  col.replace("MJ", "MJ_std") if "MJ" in col else
-                                  col.replace("Hours", "Hours_std"))
-
-    # Keep only existing columns from `order`
-    existing_cols = [c for c in expanded_order if c in flat.columns]
-    # Add any leftover columns (to avoid losing data)
-    remaining_cols = [c for c in flat.columns if c not in existing_cols]
-    
-    return flat[existing_cols]   
-
-
-def parse_df(df: pd.DataFrame) -> str:
-    df = df.round(2)
-    mj_cols = [col for col in df.columns if 'MJ' in col and 'unknown' not in col and 'std' not in col]
-    fit_cols = [col for col in df.columns if 'Fitness' in col and 'std' not in col]
-    time_cols = [col for col in df.columns if 'Hours' in col and 'unknown' not in col and 'std' not in col]
-    std_cols = [col for col in df.columns if 'std' in col]
-    ratio_cols = [col for col in df.columns if 'Fit/MJ' in col and 'std' not in col]
-    std_ratio_cols = [col for col in df.columns if 'Fit/MJ_std' in col]
-
-    for idx, row in df.iterrows():
-        # --- MIN, MJ ---
-        mj_vals = row[mj_cols].replace({np.nan: np.inf})
-        min_val = mj_vals.min()
-        min_cols = mj_vals[mj_vals == min_val].index
-        for col in min_cols:
-            val = row[col]
-            if pd.notna(val):
-                df.at[idx, col] = f"\\textbf{{{val:.2f}}}"
-    
-        # --- MIN, Hours ---
-        time_vals = row[time_cols].replace({np.nan: np.inf})
-        min_val = time_vals.min()
-        min_cols = time_vals[time_vals == min_val].index
-        for col in min_cols:
-            val = row[col]
-            if pd.notna(val):
-                df.at[idx, col] = f"\\textbf{{{val:.2f}}}"
-    
-        # --- MAX, Fitness ---
-        fit_vals = row[fit_cols].replace({np.nan: -np.inf})  # fix: -inf for max
-        max_val = fit_vals.max()
-        max_cols = fit_vals[fit_vals == max_val].index
-        for col in max_cols:
-            val = row[col]
-            if pd.notna(val):
-                df.at[idx, col] = f"\\textbf{{{val:.2f}}}"
-
-        # --- MAX, Fit/MJ ---
-        ratio_vals = row[ratio_cols].replace({np.nan: -np.inf})
-        max_val = ratio_vals.max()
-        max_cols = ratio_vals[ratio_vals == max_val].index
-        for col in max_cols:
-            val = row[col]
-            if pd.notna(val):
-                df.at[idx, col] = f"\\textbf{{{val:.2f}}}"
-   
-
-    # --- Combine std values into base columns ---
-    for std_col in std_cols:
-        base_col = std_col.replace("_std", "")
-        if base_col in df.columns:
-            for idx, row in df.iterrows():
-                val = row[base_col]
-                std_val = row[std_col]
-                if pd.notna(val) and pd.notna(std_val):
-                    df.at[idx, base_col] = f"{val} ({std_val})"
-                elif pd.notna(val):
-                    df.at[idx, base_col] = f"{val}"
-            # Optionally drop std column
-
-    # print LaTeX table lines
-    df = df.drop(columns=std_cols)
-    print(df.columns)
-    csv_str = ''
-    for _, row in df.iterrows():
-        vals = [f'{v:.2f}' if pd.notna(v) and (type(v) == type(0.0) or type(v) == type(0)) else v for v in row]
-        vals = [str(v) if pd.notna(v) else "0" for v in vals]
-        csv_str += " & ".join(vals) + " \\\\\n"
-    return csv_str
-
-
-def main(experiments_path: str) -> dict[str, pd.DataFrame]: 
-    df_rows = {'bpp': [], 'graph_coloring': []}
-
+    df_rows = {domain: [] for domain in domains}
     for root, dirs, files in os.walk(experiments_path):
         toml_files = [f for f in files if f.endswith(".toml")]
         if len(toml_files) != 1:
@@ -296,34 +129,101 @@ def main(experiments_path: str) -> dict[str, pd.DataFrame]:
         toml_path = os.path.join(root, toml_files[0])
         toml_info = extract_toml_fields(toml_path)
         domain_name = toml_info['domain_name']
-        #toml_info.pop('domain_name')
+        if domain_name not in domains:
+            continue  # skip if domain is not in the specified list
         mes_results, mes_stds, stat_results, stat_stds = extract_csv_values(root)
-        row = {
-            **toml_info,
-            "MJ": mes_results['TOTAL'],
-            "MJ_std": mes_stds['TOTAL'],
-            "Fitness": stat_results['best_of_gen'],
-            "Fitness_std": stat_stds['best_of_gen'],
-            "Hours": stat_results['time'],
-            "Hours_std": stat_stds['time'],
-            "Fit/MJ": stat_results['best_of_gen/TOTAL'] if 'best_of_gen/TOTAL' in stat_results else np.nan,
-            "Fit/MJ_std": stat_stds['best_of_gen/TOTAL'] if 'best_of_gen/TOTAL' in stat_stds else np.nan,
-        }
+        row = make_row(toml_info, mes_results, mes_stds, stat_results, stat_stds)
         df_rows[domain_name].append(row)
 
-    dfs = {domain_name: pd.DataFrame(df_rows[domain_name]) for domain_name in df_rows if len(df_rows[domain_name]) > 0}
-    formated_dfs = {domain_name: format_df(dfs[domain_name]) for domain_name in dfs}
-    formated_dfs_stds = {f'{domain_name}_std': format_df_stds(dfs[domain_name]) for domain_name in dfs}
-    formated_dfs.update(formated_dfs_stds)
-    return formated_dfs
 
+    dfs = {domain_name: pd.DataFrame(df_rows[domain_name]) for domain_name in df_rows if len(df_rows[domain_name]) > 0}
+    return dfs
+
+    
+def pivot_df(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Given a df of multiple experiments of the same domain (not instances), pivot it so each row is for an instance, and the columns are:
+    1. Instance name.
+    2. The Fitness for each configuration "{crossover_name}_{bs}_{ts}".
+    3. The Fitness_std for each configuration "{crossover_name}_{bs}_{ts}".
+    4. The MJ for each configuration "{crossover_name}_{bs}_{ts}".
+    5. The MJ_std for each configuration "{crossover_name}_{bs}_{ts}".
+    6. The Hours for each configuration "{crossover_name}_{bs}_{ts}".
+    7. The Hours_std for each configuration "{crossover_name}_{bs}_{ts}".
+    8. The MJ/Fitness for each configuration "{crossover_name}_{bs}_{ts}".
+    9. The MJ/Fitness_std for each configuration "{crossover_name}_{bs}_{ts}".
+    """
+
+    df = df.copy().drop(columns=['domain_name'])  # drop domain_name as it's the same for all rows
+    df['bs'] = pd.to_numeric(df['bs'], errors='coerce').fillna(0).astype(int)  # convert bs to int, treating NaN as 0
+    df['ts'] = pd.to_numeric(df['ts'], errors='coerce').fillna(0)  # convert ts to int, treating NaN as 0
+    df['config'] = df.apply(lambda row: f"{row['crossover_name']}_{row['bs']}_{row['ts']}", axis=1)
+
+    pivoted = df.pivot(index='instance', columns='config', values=['Fitness', 'Fitness-std', 'MJ', 'MJ-std', 'Hours', 'Hours-std', 'MJ/Fitness', 'MJ/Fitness-std'])
+    pivoted.columns = ['_'.join(col).strip() for col in pivoted.columns.values]
+    pivoted.reset_index(inplace=True)
+    return pivoted
+
+
+# functions for displaying results in paper
+def sort_columns(df: pd.DataFrame) -> pd.DataFrame:
+    metric_order = {
+        "Fitness": 0,
+        "MJ": 1,
+        "MJ/Fitness": 2,
+        "Hours": 3,
+        "Fitness-std": 4,
+        "MJ-std": 5,
+        "MJ/Fitness-std": 6,
+        "Hours-std": 7
+    }
+
+    algo_order = {
+        "kpoint": 0,
+        "dnc": 1
+    }
+
+    def col_key(col):
+        if col == "instance":
+            return (-1, 0, 0, 0)  # force first
+
+        metric, algo, batch, ts = col.split("_")
+
+        bs = int(batch)
+
+        ts = float(ts)
+        ts = -100 if ts == 0 else -ts
+
+        return (
+            algo_order.get(algo, 99),
+            bs,
+            ts,
+            metric_order.get(metric, 99)
+        )
+
+    ordered_cols = sorted(df.columns, key=col_key)
+    df = df[ordered_cols]
+    return df
+
+
+def main_table(df: pd.DataFrame) -> pd.DataFrame:
+    cols = [col for col in df.columns if any(metric in col for metric in ["Fitness", "MJ", "MJ/Fitness"]) and "std" not in col]
+    return df[["instance"] + cols]
+    
+
+    
 
 if __name__ == "__main__":
     assert len(sys.argv) == 2, "Usage: python collect_experiments.py <experiments_dir>"
     exps_path = sys.argv[1]
-    dfs = main(exps_path)
-    for domain_name, df in dfs.items():
-        print(f"-----{domain_name}-----")
-        print(parse_df(df))
-        print()
 
+    domains = ['bpp', 'graph_coloring']
+    dfs = get_data(exps_path, domains)
+
+    parsed_dfs = {domain_name: sort_columns(pivot_df(df)) for domain_name, df in dfs.items()}
+    
+    for domain_name, df in parsed_dfs.items():
+        df.to_csv(f"{exps_path}/{domain_name}_results.csv", index=False)
+        df = main_table(df)
+        print(f"-----{domain_name}-----")
+        print(df.to_latex(index=False, float_format="%.2f"))
