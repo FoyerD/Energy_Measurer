@@ -100,6 +100,10 @@ def make_row(toml_info: dict, mes_results: dict, mes_stds: dict, stat_results: d
         "Hours-std": stat_stds.get("time", np.nan),
         "MJ/Fitness": stat_results.get("best_of_gen/TOTAL", np.nan),
         "MJ/Fitness-std": stat_stds.get("best_of_gen/TOTAL", np.nan),
+        "GPU": mes_results.get("GPU", np.nan),
+        "GPU-std": mes_stds.get("GPU", np.nan),
+        "PKG": mes_results.get("PKG", np.nan),
+        "PKG-std": mes_stds.get("PKG", np.nan),
     }
     return row
 
@@ -119,6 +123,10 @@ Returns a dict with dfs, each row corresponding to an experiment, and columns fo
 - Hours-std
 - MJ/Fitness
 - MJ/Fitness-std
+- GPU
+- GPU-std
+- PKG
+- PKG-std
     """
     df_rows = {domain: [] for domain in domains}
     for root, dirs, files in os.walk(experiments_path):
@@ -159,7 +167,7 @@ def pivot_df(df: pd.DataFrame) -> pd.DataFrame:
     df['ts'] = pd.to_numeric(df['ts'], errors='coerce').fillna(0)  # convert ts to int, treating NaN as 0
     df['config'] = df.apply(lambda row: f"{row['crossover_name']}_{row['bs']}_{row['ts']}", axis=1)
 
-    pivoted = df.pivot(index='instance', columns='config', values=['Fitness', 'Fitness-std', 'MJ', 'MJ-std', 'Hours', 'Hours-std', 'MJ/Fitness', 'MJ/Fitness-std'])
+    pivoted = df.pivot(index='instance', columns='config', values=['Fitness', 'Fitness-std', 'MJ', 'MJ-std', 'Hours', 'Hours-std', 'MJ/Fitness', 'MJ/Fitness-std', 'GPU', 'GPU-std', 'PKG', 'PKG-std'])
     pivoted.columns = ['_'.join(col).strip() for col in pivoted.columns.values]
     pivoted.reset_index(inplace=True)
     return pivoted
@@ -175,7 +183,11 @@ def sort_columns(df: pd.DataFrame) -> pd.DataFrame:
         "Fitness-std": 4,
         "MJ-std": 5,
         "MJ/Fitness-std": 6,
-        "Hours-std": 7
+        "Hours-std": 7,
+        "GPU": 8,
+        "GPU-std": 9,
+        "PKG": 10,
+        "PKG-std": 11
     }
 
     algo_order = {
@@ -209,9 +221,67 @@ def sort_columns(df: pd.DataFrame) -> pd.DataFrame:
 def main_table(df: pd.DataFrame) -> pd.DataFrame:
     cols = [col for col in df.columns if any(metric in col for metric in ["Fitness", "MJ", "MJ/Fitness"]) and "std" not in col]
     return df[["instance"] + cols]
+
+def std_table(df: pd.DataFrame) -> pd.DataFrame:
+    cols = [col for col in df.columns if any(metric in col for metric in ["Fitness", "MJ", "MJ/Fitness"]) and "std" in col]
+    return df[["instance"] + cols]
     
 
-    
+def get_latex_format(df):
+    df = df.copy()
+
+    # detect columns
+    mj_cols = [c for c in df.columns if c.startswith("MJ_") and "kpoint" not in c]
+    time_cols = [c for c in df.columns if c.startswith("Hours_") and "kpoint" not in c]
+    fit_cols = [c for c in df.columns if c.startswith("Fitness_")]
+    ratio_cols = [c for c in df.columns if c.startswith("MJ/Fitness_") and "kpoint" not in c]
+
+    for idx, row in df.iterrows():
+
+        # --- MIN, MJ ---
+        mj_vals = row[mj_cols].replace({np.nan: np.inf})
+        min_val = mj_vals.min()
+        min_cols = mj_vals[mj_vals == min_val].index
+        for col in min_cols:
+            val = row[col]
+            if pd.notna(val):
+                df.at[idx, col] = f"\\textbf{{{val:.2f}}}"
+
+        # --- MIN, Hours ---
+        time_vals = row[time_cols].replace({np.nan: np.inf})
+        min_val = time_vals.min()
+        min_cols = time_vals[time_vals == min_val].index
+        for col in min_cols:
+            val = row[col]
+            if pd.notna(val):
+                df.at[idx, col] = f"\\textbf{{{val:.2f}}}"
+
+        # --- MAX, Fitness ---
+        fit_vals = row[fit_cols].replace({np.nan: -np.inf})
+        max_val = fit_vals.max()
+        max_cols = fit_vals[fit_vals == max_val].index
+        for col in max_cols:
+            val = row[col]
+            if pd.notna(val):
+                df.at[idx, col] = f"\\textbf{{{val:.2f}}}"
+
+        # --- MAX, MJ/Fitness ---
+        ratio_vals = row[ratio_cols].replace({np.nan: -np.inf})
+        max_val = ratio_vals.max()
+        max_cols = ratio_vals[ratio_vals == max_val].index
+        for col in max_cols:
+            val = row[col]
+            if pd.notna(val):
+                df.at[idx, col] = f"\\textbf{{{val:.2f}}}"
+
+    # format remaining numeric values
+    for col in df.columns:
+        if col != "instance":
+            df[col] = df[col].apply(
+                lambda x: f"{x:.2f}" if isinstance(x, (int, float, np.floating)) else x
+            )
+
+    return df.to_latex(index=False, escape=False)
 
 if __name__ == "__main__":
     assert len(sys.argv) == 2, "Usage: python collect_experiments.py <experiments_dir>"
@@ -224,6 +294,8 @@ if __name__ == "__main__":
     
     for domain_name, df in parsed_dfs.items():
         df.to_csv(f"{exps_path}/{domain_name}_results.csv", index=False)
-        df = main_table(df)
+        main_df = main_table(df)
+        std_df = std_table(df)
         print(f"-----{domain_name}-----")
-        print(df.to_latex(index=False, float_format="%.2f"))
+        print(get_latex_format(main_df))
+        print(get_latex_format(std_df))

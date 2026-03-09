@@ -19,8 +19,13 @@ def add_gen_to_df(measures_df, gen_df):
     merged_df['gen'] = merged_df['gen'].ffill().bfill() #filling empty gen entries of GPU
     # Split the merged_db into two DataFrames based on 'type'
     measure_df_split = merged_df[merged_df['type'] == 'MEASURE'].drop(columns=['type']).reset_index(drop=True)
+    
     gen_df_split = merged_df[merged_df['type'] == 'GEN'].drop(columns=['type']).reset_index(drop=True)
-    return measure_df_split, gen_df_split
+    gened_measures_df_sorted = measure_df_split.sort_values('time', ascending=False)
+    gened_measures_df = gened_measures_df_sorted.drop_duplicates(subset='gen')
+    measure_df_split_single_gen = gened_measures_df.sort_values('gen').reset_index(drop=True)
+
+    return measure_df_split_single_gen, gen_df_split
 
 
 
@@ -109,7 +114,14 @@ def merge_files(measures_dir, statistics_dir, out_dir, base_pkg:float=0.0, base_
     # adding gen column to each measures df based on corresponding statistics df
     for measure_df, statistics_df in zip(measures, statistics):
         gened_measures_df, gened_statistics_df = add_gen_to_df(measure_df, statistics_df)
-        gened_statistics_df['best_of_gen/TOTAL'] = gened_statistics_df['best_of_gen'] / gened_measures_df['TOTAL']
+
+        gen_mapping = gened_measures_df.set_index('gen')['TOTAL']
+        gened_statistics_df['best_of_gen/TOTAL'] = gened_statistics_df['best_of_gen'] / gen_mapping.reindex(gened_statistics_df['gen']).values
+        gened_statistics_df['best_of_gen/TOTAL'] = gened_statistics_df['best_of_gen/TOTAL'].ffill().bfill()
+        if (len(gened_statistics_df) != len(gened_measures_df)):
+            print(f"stat num rows: {len(gened_statistics_df)}, mes num rows: {len(gened_measures_df)}")
+            print(f"{gened_statistics_df['best_of_gen'].iloc[-1]}/{gened_measures_df['TOTAL'].iloc[-1]}={gened_statistics_df['best_of_gen/TOTAL'].iloc[-1]}")
+
         gened_measures.append(gened_measures_df)
         gened_statistics.append(gened_statistics_df)
         
@@ -138,10 +150,10 @@ def merge_files(measures_dir, statistics_dir, out_dir, base_pkg:float=0.0, base_
     all_statistics_df['TRAINED'] = all_statistics_df['TRAINED'].astype(bool)
     merged_measures_df = group_df(all_measures_df, 'gen').reset_index()
     merged_statistics_df = group_df(all_statistics_df, 'gen').reset_index()
-    
+
     # adding stds
     final_measures_df = reduce(
-            lambda curr_df, col: pd.merge(curr_df, measures_value_stds[col], on='gen', how='left'),
+            lambda curr_df, col: pd.merge(curr_df, measures_value_stds[col], on='gen', how='left'),                                 
             measures_value_stds.keys(),
             merged_measures_df)
 
