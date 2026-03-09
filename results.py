@@ -4,6 +4,9 @@ import sys
 import os
 import tomllib
 import numpy as np
+from sympy import latex
+
+import parse
 
 def extract_toml_fields(toml_path: str):
     """Extract relevant fields from the .toml file, handling different domains and crossovers."""
@@ -229,73 +232,76 @@ def std_table(df: pd.DataFrame) -> pd.DataFrame:
 
 def get_latex_format(df):
     df = df.copy()
+    bold_coords = set()
 
-    # detect columns
     mj_cols = [c for c in df.columns if c.startswith("MJ_") and "kpoint" not in c]
     time_cols = [c for c in df.columns if c.startswith("Hours_") and "kpoint" not in c]
     fit_cols = [c for c in df.columns if c.startswith("Fitness_")]
     ratio_cols = [c for c in df.columns if c.startswith("MJ/Fitness_") and "kpoint" not in c]
 
     for idx, row in df.iterrows():
+        def mark_extremes(cols, find_max=True):
+            vals = pd.to_numeric(row[cols], errors='coerce')
+            vals_for_calc = vals.replace({np.nan: -np.inf if find_max else np.inf})
+            target = vals_for_calc.max() if find_max else vals_for_calc.min()            
+            matches = vals[vals.round(2) == round(target, 2)].index
+            
+            for col in matches:
+                if pd.notna(row[col]):
+                    bold_coords.add((idx, col))
+                    df.at[idx, col] = f"\\textbf{{{row[col]:.2f}}}"
 
-        # --- MIN, MJ ---
-        mj_vals = row[mj_cols].replace({np.nan: np.inf})
-        min_val = mj_vals.min()
-        min_cols = mj_vals[mj_vals == min_val].index
-        for col in min_cols:
-            val = row[col]
-            if pd.notna(val):
-                df.at[idx, col] = f"\\textbf{{{val:.2f}}}"
+        mark_extremes(mj_cols, find_max=False)
+        mark_extremes(time_cols, find_max=False)
+        mark_extremes(fit_cols, find_max=True)
+        mark_extremes(ratio_cols, find_max=True)
 
-        # --- MIN, Hours ---
-        time_vals = row[time_cols].replace({np.nan: np.inf})
-        min_val = time_vals.min()
-        min_cols = time_vals[time_vals == min_val].index
-        for col in min_cols:
-            val = row[col]
-            if pd.notna(val):
-                df.at[idx, col] = f"\\textbf{{{val:.2f}}}"
-
-        # --- MAX, Fitness ---
-        fit_vals = row[fit_cols].replace({np.nan: -np.inf})
-        max_val = fit_vals.max()
-        max_cols = fit_vals[fit_vals == max_val].index
-        for col in max_cols:
-            val = row[col]
-            if pd.notna(val):
-                df.at[idx, col] = f"\\textbf{{{val:.2f}}}"
-
-        # --- MAX, MJ/Fitness ---
-        ratio_vals = row[ratio_cols].replace({np.nan: -np.inf})
-        max_val = ratio_vals.max()
-        max_cols = ratio_vals[ratio_vals == max_val].index
-        for col in max_cols:
-            val = row[col]
-            if pd.notna(val):
-                df.at[idx, col] = f"\\textbf{{{val:.2f}}}"
-
-    # format remaining numeric values
     for col in df.columns:
         if col != "instance":
             df[col] = df[col].apply(
                 lambda x: f"{x:.2f}" if isinstance(x, (int, float, np.floating)) else x
             )
 
-    return df.to_latex(index=False, escape=False)
+    return df.to_latex(index=False, escape=False), bold_coords
+
+def get_latex_format_std(df_std, bold_coords):
+    df_std = df_std.copy()
+
+    for idx, row in df_std.iterrows():
+        for col in df_std.columns:
+            if col == "instance":
+                continue
+            
+            val = row[col]
+            formatted_val = f"{val:.2f}" if pd.notna(val) else "nan"
+            
+            if (idx, col) in bold_coords:
+                df_std.at[idx, col] = f"\\textbf{{{formatted_val}}}"
+            else:
+                df_std.at[idx, col] = formatted_val
+
+    return df_std.to_latex(index=False, escape=False)
+    
 
 if __name__ == "__main__":
-    assert len(sys.argv) == 2, "Usage: python collect_experiments.py <experiments_dir>"
-    exps_path = sys.argv[1]
-
-    domains = ['bpp', 'graph_coloring']
-    dfs = get_data(exps_path, domains)
-
-    parsed_dfs = {domain_name: sort_columns(pivot_df(df)) for domain_name, df in dfs.items()}
+    assert len(sys.argv) >= 2, "Usage: python collect_experiments.py <experiments_dir>"
     
+    exps_path = sys.argv[1]
+    domains = ['bpp'] # 'graph_coloring'
+    if len(sys.argv) == 3:
+        parsed_dfs = {domain: pd.read_csv(f"{exps_path}/{domain}_results.csv") for domain in domains}
+    else:
+        dfs = get_data(exps_path, domains)
+        parsed_dfs = {domain_name: sort_columns(pivot_df(df)) for domain_name, df in dfs.items()}
+        for domain_name, df in parsed_dfs.items():
+            df.to_csv(f"{exps_path}/{domain_name}_results.csv", index=False)
+
     for domain_name, df in parsed_dfs.items():
-        df.to_csv(f"{exps_path}/{domain_name}_results.csv", index=False)
         main_df = main_table(df)
         std_df = std_table(df)
         print(f"-----{domain_name}-----")
-        print(get_latex_format(main_df))
-        print(get_latex_format(std_df))
+        latex_main, bold_map = get_latex_format(main_df)
+        print(latex_main)
+
+        latex_std = get_latex_format_std(std_df, bold_map)
+        print(latex_std)
