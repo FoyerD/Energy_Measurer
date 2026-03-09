@@ -232,6 +232,7 @@ def std_table(df: pd.DataFrame) -> pd.DataFrame:
 
 def get_latex_format(df):
     df = df.copy()
+    df = df.round(2)
     bold_coords = set()
 
     mj_cols = [c for c in df.columns if c.startswith("MJ_") and "kpoint" not in c]
@@ -249,7 +250,7 @@ def get_latex_format(df):
             for col in matches:
                 if pd.notna(row[col]):
                     bold_coords.add((idx, col))
-                    df.at[idx, col] = f"\\textbf{{{row[col]:.2f}}}"
+                    df.at[idx, col] = f"\\textbf{{{row[col]}}}"
 
         mark_extremes(mj_cols, find_max=False)
         mark_extremes(time_cols, find_max=False)
@@ -275,7 +276,7 @@ def get_latex_format_std(df_std, bold_coords):
             val = row[col]
             formatted_val = f"{val:.2f}" if pd.notna(val) else "nan"
             
-            if (idx, col) in bold_coords:
+            if (idx, col.replace("-std", "")) in bold_coords:
                 df_std.at[idx, col] = f"\\textbf{{{formatted_val}}}"
             else:
                 df_std.at[idx, col] = formatted_val
