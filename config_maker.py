@@ -1,7 +1,8 @@
 import toml
 import os
 
-base_configs_paths = ["setups/dnc_bpp.toml", "setups/kpoint_bpp.toml"] # "setups/dnc_gc.toml", "setups/kpoint_gc.toml"]
+# base_configs_paths = ["setups/dnc_bpp.toml", "setups/kpoint_bpp.toml", "setups/dnc_gc.toml", "setups/kpoint_gc.toml"]
+base_configs_paths = ["setups/dnc_gc.toml", "setups/kpoint_gc.toml"]
 output_dir = "setups/batch_setups"
 
 batch_sizes = [512, 1024, 2048]
