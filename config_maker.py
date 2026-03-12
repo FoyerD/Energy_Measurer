@@ -7,7 +7,7 @@ output_dir = "setups/batch_setups"
 
 batch_sizes = [512, 1024, 2048]
 fes = [0, 0.1, 0.01, 0.001]
-domain_to_dataset_names = {'gc': ['games120.col','myciel7.col','miles1000.col','miles1500.col','mulsol.i.2.col','queen8_12.col'],
+domain_to_dataset_names = {'gc': ['games120.col','myciel7.col','miles1000.col','miles1500.col','mulsol.i.2.col','queen8_12.col', 'zeroin.i.1.col', 'zeroin.i.2.col'],
                 'bpp': ['BPP_14', 'BPP_181', 'BPP_195', 'BPP_359', 'BPP_360', 'BPP_40', 'BPP_47', 'BPP_60', 'BPP_645', 'BPP_785', 'BPP_832']}
 
 os.makedirs(output_dir, exist_ok=True)
