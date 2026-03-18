@@ -228,6 +228,11 @@ def main_table(df: pd.DataFrame) -> pd.DataFrame:
 def std_table(df: pd.DataFrame) -> pd.DataFrame:
     cols = [col for col in df.columns if any(metric in col for metric in ["Fitness", "MJ", "MJ/Fitness"]) and "std" in col]
     return df[["instance"] + cols]
+
+def time_table(df: pd.DataFrame) -> pd.DataFrame:
+    cols = [col for col in df.columns if "Hours" in col]
+    cols = [col for col in cols if "kpoint" in col or ("dnc_2048_0.0" in col and '1' not in col) or "dnc_2048_0.1" in col]
+    return df[["instance"] + cols]
     
 
 def get_latex_format(df):
@@ -300,9 +305,14 @@ if __name__ == "__main__":
     for domain_name, df in parsed_dfs.items():
         main_df = main_table(df)
         std_df = std_table(df)
+        time_df = time_table(df)
+
         print(f"-----{domain_name}-----")
         latex_main, bold_map = get_latex_format(main_df)
         print(latex_main)
 
         latex_std = get_latex_format_std(std_df, bold_map)
         print(latex_std)
+
+        latex_time = get_latex_format(time_df)
+        print(latex_time[0])
