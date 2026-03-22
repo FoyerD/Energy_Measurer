@@ -293,7 +293,7 @@ if __name__ == "__main__":
     assert len(sys.argv) >= 2, "Usage: python collect_experiments.py <experiments_dir>"
     
     exps_path = sys.argv[1]
-    domains = ['bpp'] # 'graph_coloring'
+    domains = ['bpp', 'graph_coloring'] # 'graph_coloring'
     if len(sys.argv) == 3:
         parsed_dfs = {domain: pd.read_csv(f"{exps_path}/{domain}_results.csv") for domain in domains}
     else:
@@ -307,12 +307,13 @@ if __name__ == "__main__":
         std_df = std_table(df)
         time_df = time_table(df)
 
-        print(f"-----{domain_name}-----")
         latex_main, bold_map = get_latex_format(main_df)
-        print(latex_main)
-
         latex_std = get_latex_format_std(std_df, bold_map)
-        print(latex_std)
+        latex_time, _ = get_latex_format(time_df)
 
-        latex_time = get_latex_format(time_df)
-        print(latex_time[0])
+        print(f"-----{domain_name}-----")
+        print(latex_main)
+        print("----")
+        print(latex_std)
+        print("----")
+        print(latex_time)
