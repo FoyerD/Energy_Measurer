@@ -1,17 +1,33 @@
 import matplotlib.pyplot as plt
 
-fig, ax = plt.subplots()
 
-line1, = ax.plot([], [], color='red', label='PKG MJ')
-line2, = ax.plot([], [], color='blue', label='GPU MJ')
-line3, = ax.plot([], [], color='purple', label='Total MJ')
-line4, = ax.plot([], [], color='green', label='Best of Gen Fitness')
+plt.rcParams.update({
+    "font.family": "serif",
+    "text.usetex": False,  
+    "font.size": 10
+})
 
-legend = plt.legend(handles=[line1, line2, line3, line4], loc='center', ncol=4)
+fig, ax = plt.subplots(figsize=(6, 0.5)) 
+
+
+line1, = ax.plot([], [], color='#d62728', lw=2, label='PKG MJ')
+line2, = ax.plot([], [], color='#1f77b4', lw=2, label='GPU MJ')
+line3, = ax.plot([], [], color='#9467bd', lw=2, label='Total MJ')
+line4, = ax.plot([], [], color='#2ca02c', lw=2, label='Best Fitness')
+
+legend = ax.legend(
+    handles=[line1, line2, line3, line4],
+    loc='center',
+    ncol=4,
+    frameon=True,
+    fancybox=False,
+    edgecolor='black',
+    columnspacing=1.0,
+    handletextpad=0.5
+)
 
 ax.axis('off')
 
-fig.canvas.draw()
-bbox = legend.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
 
-plt.show()
+
+plt.savefig("legend.pdf", bbox_inches='tight', pad_inches=0.05)

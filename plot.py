@@ -6,8 +6,9 @@ import pandas as pd
 from math import inf
 import ast
 
+formats = ['pdf']
+
 def unzip(tuples):
-    # Using zip() with * to unzip the list
     a, b = zip(*tuples)
 
     # Convert the results to lists
@@ -90,8 +91,8 @@ def plot_dual_graph(measures_df, statistics_df, output_dir:str, markers:list, na
     #     plotter.add_marker(time=marker['time'], time_col='time', col=marker['col'], axes_n=1, db_name='statistics')
     
     fig.legend(loc='upper left', bbox_to_anchor=(0.0, 1.0))
-    fig.savefig(f'{output_dir}/svgs/{name}.svg')
-    fig.savefig(f'{output_dir}/pngs/{name}.png')
+    for format in formats:
+        fig.savefig(f'{output_dir}/{format}s/{name}.{format}')
 
 def plot_statistics_over_time(measures_df, statistics_df, output_dir:str, markers:list, name:str='dual_plot', num_exps_to_plot: int = inf):
     fig, ax1 = plt.subplots(figsize=(10, 6))
@@ -146,8 +147,8 @@ def plot_statistics_over_time(measures_df, statistics_df, output_dir:str, marker
     #     plotter.add_marker(time=marker['time'], time_col='time', col=marker['col'], axes_n=1, db_name='statistics')
     
     fig.legend(loc='upper left')
-    fig.savefig(f'{output_dir}/svgs/{name}.svg')
-    fig.savefig(f'{output_dir}/pngs/{name}.png')
+    for format in formats:
+        fig.savefig(f'{output_dir}/{format}s/{name}.{format}')
 
 
 def plot_memory_over_gen(measures_df, statistics_df, output_dir: str, name:str='memory_over_gen', num_exps_to_plot: int = inf):
@@ -186,8 +187,8 @@ def plot_memory_over_gen(measures_df, statistics_df, output_dir: str, name:str='
     plt.legend(loc='upper left')
     plt.grid(True)
     
-    plt.savefig(f'{output_dir}/svgs/{name}.svg')
-    plt.savefig(f'{output_dir}/pngs/{name}.png')
+    for format in formats:
+        fig.savefig(f'{output_dir}/{format}s/{name}.{format}')
     plt.close()
 
 def plot_statistics_over_total(measures_df, statistics_df, output_dir: str, markers, name:str='statistics_over_joules', num_exps_to_plot: int = inf):
@@ -227,8 +228,8 @@ def plot_statistics_over_total(measures_df, statistics_df, output_dir: str, mark
     plt.legend()
     plt.grid(True)
     
-    plt.savefig(f'{output_dir}/svgs/{name}.svg')
-    plt.savefig(f'{output_dir}/pngs/{name}.png')
+    for format in formats:
+        fig.savefig(f'{output_dir}/{format}s/{name}.{format}')
     plt.close()
 
 
@@ -268,8 +269,8 @@ def plot_memory_over_joules(measures_df, statistics_df, output_dir: str, name:st
     plt.legend()
     plt.grid(True)
     
-    plt.savefig(f'{output_dir}/svgs/{name}.svg')
-    plt.savefig(f'{output_dir}/pngs/{name}.png')
+    for format in formats:
+        fig.savefig(f'{output_dir}/{format}s/{name}.{format}')
     plt.close()
 
     
@@ -309,8 +310,8 @@ def plot_ratio_over_gen(measures_df, statistics_df, output_dir: str, name:str='r
     plt.legend(loc='upper left')
     plt.grid(True)
     
-    plt.savefig(f'{output_dir}/svgs/{name}.svg')
-    plt.savefig(f'{output_dir}/pngs/{name}.png')
+    for format in formats:
+        fig.savefig(f'{output_dir}/{format}s/{name}.{format}')
     plt.close()
     
 
