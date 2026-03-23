@@ -90,7 +90,7 @@ def plot_dual_graph(measures_df, statistics_df, output_dir:str, markers:list, na
     # for marker in markers:
     #     plotter.add_marker(time=marker['time'], time_col='time', col=marker['col'], axes_n=1, db_name='statistics')
     
-    fig.legend(loc='upper left', bbox_to_anchor=(0.0, 1.0))
+    # fig.legend(loc='upper left', bbox_to_anchor=(0.0, 1.0))
     for format in formats:
         fig.savefig(f'{output_dir}/{format}s/{name}.{format}')
 
@@ -146,7 +146,7 @@ def plot_statistics_over_time(measures_df, statistics_df, output_dir:str, marker
     # for marker in markers:
     #     plotter.add_marker(time=marker['time'], time_col='time', col=marker['col'], axes_n=1, db_name='statistics')
     
-    fig.legend(loc='upper left')
+    # fig.legend(loc='upper left')
     for format in formats:
         fig.savefig(f'{output_dir}/{format}s/{name}.{format}')
 
@@ -184,11 +184,11 @@ def plot_memory_over_gen(measures_df, statistics_df, output_dir: str, name:str='
     plt.xlabel('Generation')
     plt.ylabel('Memory Usage (KB)')
     plt.title('Memory Usage Over Generations')
-    plt.legend(loc='upper left')
+    # plt.legend(loc='upper left')
     plt.grid(True)
     
     for format in formats:
-        fig.savefig(f'{output_dir}/{format}s/{name}.{format}')
+        plt.savefig(f'{output_dir}/{format}s/{name}.{format}')
     plt.close()
 
 def plot_statistics_over_total(measures_df, statistics_df, output_dir: str, markers, name:str='statistics_over_joules', num_exps_to_plot: int = inf):
@@ -225,11 +225,11 @@ def plot_statistics_over_total(measures_df, statistics_df, output_dir: str, mark
     plt.xlabel('TOTAL Energy (Joules)')
     plt.ylabel('Best of Gen Fitness')
     plt.title('Best Fitness vs Total Energy Consumed')
-    plt.legend()
+    # plt.legend()
     plt.grid(True)
     
     for format in formats:
-        fig.savefig(f'{output_dir}/{format}s/{name}.{format}')
+        plt.savefig(f'{output_dir}/{format}s/{name}.{format}')
     plt.close()
 
 
@@ -266,11 +266,11 @@ def plot_memory_over_joules(measures_df, statistics_df, output_dir: str, name:st
     plt.xlabel('TOTAL Energy (Joules)')
     plt.ylabel('Memory Usage (KB)')
     plt.title('Memory Usage vs Total Energy Consumed')
-    plt.legend()
+    # plt.legend()
     plt.grid(True)
     
     for format in formats:
-        fig.savefig(f'{output_dir}/{format}s/{name}.{format}')
+        plt.savefig(f'{output_dir}/{format}s/{name}.{format}')
     plt.close()
 
     
@@ -307,11 +307,11 @@ def plot_ratio_over_gen(measures_df, statistics_df, output_dir: str, name:str='r
     plt.xlabel('Generation')
     plt.ylabel('Best of Gen Fitness / Total Energy (Fitness/Joules)')
     plt.title('Fitness per Joule Over Generations')
-    plt.legend(loc='upper left')
+    # plt.legend(loc='upper left')
     plt.grid(True)
     
     for format in formats:
-        fig.savefig(f'{output_dir}/{format}s/{name}.{format}')
+        plt.savefig(f'{output_dir}/{format}s/{name}.{format}')
     plt.close()
     
 
@@ -365,11 +365,10 @@ if __name__ == "__main__":
     
     
     images_dir = os.path.join(args.experiment_dir, 'imgs')
-    path_svgs = os.path.join(images_dir, 'svgs')
-    path_pngs = os.path.join(images_dir, 'pngs')
-    os.makedirs(images_dir, exist_ok=True)
-    os.makedirs(path_svgs, exist_ok=True)
-    os.makedirs(path_pngs, exist_ok=True)
+    for format in formats:
+        path_format = os.path.join(images_dir, f'{format}s')
+        os.makedirs(path_format, exist_ok=True)
+
     main(measures_file=os.path.join(args.experiment_dir, 'mean_measures.csv'),
          statistics_file=os.path.join(args.experiment_dir, 'mean_statistics.csv'),
          output_dir=images_dir,
