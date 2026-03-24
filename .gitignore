@@ -9,6 +9,9 @@ setups/batch_setups/
 # Bash scripts to ignore
 scripts/get_exp.sh
 
+# Databases
+graph_baselines.csv
+
 
 # C extensions
 *.so
