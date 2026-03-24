@@ -1,10 +1,53 @@
-
 import argparse
 import csv
 import os
 from statistics import mean
 import pandas as pd
 from functools import reduce
+from pathlib import Path
+        
+_gc_metadata_cache = None
+import pandas as pd
+from pathlib import Path
+
+# Module-level cache for O(1) metadata lookup
+_gc_metadata_cache = None
+
+def transform_gc_fitness(instance, raw_value, metadata_path="datasets_dnc/graph_coloring/graph_baselines.csv", penalty=1000):
+    global _gc_metadata_cache
+    
+    if _gc_metadata_cache is None:
+        if not Path(metadata_path).exists():
+            raise FileNotFoundError(f"Metadata CSV missing: {metadata_path}")
+        df = pd.read_csv(metadata_path)
+        _gc_metadata_cache = df.set_index('instance_name').to_dict('index')
+    if instance not in _gc_metadata_cache:
+        raise ValueError(f"Instance '{instance}' not found in metadata.")
+    if raw_value >= penalty:
+        return -float('inf')
+
+    k = raw_value
+    n_nodes = _gc_metadata_cache[instance]['nodes']
+
+    if n_nodes > 1:
+        maximizing_fitness = (n_nodes - k) / (n_nodes - 1)
+    else:
+        maximizing_fitness = 1.0
+
+    return maximizing_fitness
+
+def transform_measures(df: pd.DataFrame):
+    df['PKG'] = df['PKG'].astype(float) / 1000
+    df['GPU'] = df['GPU'].astype(float) / 1000
+    df['PKG'] = df['PKG'].cumsum()
+    df['GPU'] = df['GPU'].cumsum()
+    df['TOTAL'] = df['GPU'] + df['PKG']
+    return df
+
+def transform_statistics(df: pd.DataFrame, domain:str, instance:str):
+    if domain == "graph_coloring":
+        df['best_of_gen'] = df['best_of_gen'].apply(lambda x: transform_gc_fitness(instance, x))
+    return df
 
 def preprocess_df(df):
     df['time'] = pd.to_numeric(df['time'], errors='coerce')
@@ -80,35 +123,28 @@ def group_df(df: pd.DataFrame, key_col: str):
     merged_measures_df = df.groupby('gen', as_index=False).agg(agg_dict)
     return merged_measures_df
 
-def merge_files(measures_dir, statistics_dir, out_dir, base_pkg:float=0.0, base_gpu:float=0.0):
+def merge_files(measures_dir, statistics_dir, out_dir, domain, instance, base_pkg:float=0.0, base_gpu:float=0.0):
     measures = []
     statistics = []
-    
     gened_measures = []
     gened_statistics = []
-
     
     # collecting measures dataframes
     for root, dirs, files in os.walk(measures_dir):
         for file in files:
             curr_df = pd.read_csv(os.path.join(root, file))
-            curr_df['PKG'] = ((curr_df['PKG'] - base_pkg) / 1000)
-            curr_df['GPU'] = ((curr_df['GPU'] - base_gpu) / 1000)
-            curr_df['PKG'] = curr_df['PKG'].cumsum()
-            curr_df['GPU'] = curr_df['GPU'].cumsum()
-            curr_df['TOTAL'] = curr_df['GPU'] + curr_df['PKG']
+            curr_df = transform_measures(curr_df)
             measures.append(preprocess_df(curr_df))
 
     # collecting statistics dataframes
     for root, dirs, files in os.walk(statistics_dir):
         for file in files:
             curr_df = pd.read_csv(os.path.join(root, file))
+            curr_df = transform_statistics(curr_df, domain=domain, instance=instance)
             statistics.append(preprocess_df(curr_df))
     
     if len(measures) != len(statistics):
         raise RuntimeError(f"The number of measures and statistics files must be the same\nstat:{len(statistics)}, mes: {len(measures)}")
-
-    
     
     
     # adding gen column to each measures df based on corresponding statistics df
@@ -211,13 +247,11 @@ if __name__ == '__main__':
 
     print(f"------ Parsing {args.exp_dir} ------")
 
-    parse_statistics(os.path.join(args.exp_dir, 'statistics.csv'),
-                     statistics_dir)
-    parse_pinpoint(os.path.join(args.exp_dir, 'raw.txt'),
-                   measures_dir)
+    parse_statistics(os.path.join(args.exp_dir, 'statistics.csv'), statistics_dir)
+    parse_pinpoint(os.path.join(args.exp_dir, 'raw.txt'), measures_dir)
     if baseline_dir:
         _, base_pkg, base_gpu = get_baseline_stats(os.path.join(baseline_dir, 'raw.txt'))
 
-    merge_files(measures_dir,
-                statistics_dir,
-                args.exp_dir, base_pkg, base_gpu)
+    domain = args.exp_dir.split('/')[-1].split('__')[0]
+    instance = args.exp_dir.split('/')[-1].split('__')[1]
+    merge_files(measures_dir, statistics_dir, args.exp_dir, domain, instance, base_pkg, base_gpu)

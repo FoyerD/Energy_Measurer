@@ -5,8 +5,10 @@ import os
 import tomllib
 import numpy as np
 from sympy import latex
-
 import parse
+
+
+
 
 def extract_toml_fields(toml_path: str):
     """Extract relevant fields from the .toml file, handling different domains and crossovers."""
@@ -40,7 +42,7 @@ def extract_toml_fields(toml_path: str):
 
     return {
         "domain_name": domain_name,
-        "instance": dataset_name.replace('BPP_', ''),
+        "instance": dataset_name.replace("_", "\_"),
         "crossover_name": crossover_name,
         "bs": batch_size,
         "ts": training_scheduling,
@@ -235,6 +237,8 @@ def time_table(df: pd.DataFrame) -> pd.DataFrame:
     return df[["instance"] + cols]
     
 
+
+
 def get_latex_format(df):
     df = df.copy()
     df = df.round(2)
@@ -250,7 +254,7 @@ def get_latex_format(df):
             vals = pd.to_numeric(row[cols], errors='coerce')
             vals_for_calc = vals.replace({np.nan: -np.inf if find_max else np.inf})
             target = vals_for_calc.max() if find_max else vals_for_calc.min()            
-            matches = vals[vals.round(2) == round(target, 2)].index
+            matches = vals[vals.round(2) == round(target, 4)].index
             
             for col in matches:
                 if pd.notna(row[col]):
