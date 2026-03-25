@@ -6,7 +6,7 @@ import pandas as pd
 from math import inf
 import ast
 
-formats = ['pdf']
+known_formats = ['pdf', 'png', 'svg']
 
 def unzip(tuples):
     a, b = zip(*tuples)
@@ -38,7 +38,7 @@ def add_trained_markers(df: pd.DataFrame, x_col: str, ax, num_exps_to_plot: int 
         for x in trained_xs:
             ax.axvline(x=x, color=color, linestyle='--', alpha=0.5)
 
-def plot_dual_graph(measures_df, statistics_df, output_dir:str, markers:list, name:str='dual_plot', num_exps_to_plot: int = inf):
+def plot_dual_graph(measures_df, statistics_df, output_dir:str, markers:list, name:str='dual_plot', num_exps_to_plot: int = inf, formats:list=['png']):
     fig, ax1 = plt.subplots(figsize=(10, 6))
     axes = [ax1, ax1.twinx()]    
     
@@ -94,7 +94,7 @@ def plot_dual_graph(measures_df, statistics_df, output_dir:str, markers:list, na
     for format in formats:
         fig.savefig(f'{output_dir}/{format}s/{name}.{format}')
 
-def plot_statistics_over_time(measures_df, statistics_df, output_dir:str, markers:list, name:str='dual_plot', num_exps_to_plot: int = inf):
+def plot_statistics_over_time(measures_df, statistics_df, output_dir:str, markers:list, name:str='dual_plot', num_exps_to_plot: int = inf, formats:list=['png']):
     fig, ax1 = plt.subplots(figsize=(10, 6))
     axes = [ax1, ax1.twinx()]    
     
@@ -151,7 +151,7 @@ def plot_statistics_over_time(measures_df, statistics_df, output_dir:str, marker
         fig.savefig(f'{output_dir}/{format}s/{name}.{format}')
 
 
-def plot_memory_over_gen(measures_df, statistics_df, output_dir: str, name:str='memory_over_gen', num_exps_to_plot: int = inf):
+def plot_memory_over_gen(measures_df, statistics_df, output_dir: str, name:str='memory_over_gen', num_exps_to_plot: int = inf, formats:list=['png']):
     
     # Merge dataframes on 'gen' to align TOTAL and best_of_gen
     merged_df = pd.merge(statistics_df.drop(columns=['TOTAL']), measures_df[['gen', 'TOTAL']], on='gen', how='inner')
@@ -191,7 +191,7 @@ def plot_memory_over_gen(measures_df, statistics_df, output_dir: str, name:str='
         plt.savefig(f'{output_dir}/{format}s/{name}.{format}')
     plt.close()
 
-def plot_statistics_over_total(measures_df, statistics_df, output_dir: str, markers, name:str='statistics_over_joules', num_exps_to_plot: int = inf):
+def plot_statistics_over_total(measures_df, statistics_df, output_dir: str, markers, name:str='statistics_over_joules', num_exps_to_plot: int = inf, formats:list=['png']):
     # Merge dataframes on 'gen' to align TOTAL and best_of_gen
     merged_df = pd.merge(statistics_df.drop(columns=['TOTAL']), measures_df[['gen', 'TOTAL']], on='gen', how='inner')
     merged_df = merged_df.sort_values(by='TOTAL')
@@ -233,7 +233,7 @@ def plot_statistics_over_total(measures_df, statistics_df, output_dir: str, mark
     plt.close()
 
 
-def plot_memory_over_joules(measures_df, statistics_df, output_dir: str, name:str='memory_over_joules', num_exps_to_plot: int = inf):
+def plot_memory_over_joules(measures_df, statistics_df, output_dir: str, name:str='memory_over_joules', num_exps_to_plot: int = inf, formats:list=['png']):
     
     # Merge dataframes on 'gen' to align TOTAL and MEMORY
     merged_df = pd.merge(statistics_df.drop(columns=['TOTAL']), measures_df[['gen', 'TOTAL']], on='gen', how='inner')
@@ -274,7 +274,7 @@ def plot_memory_over_joules(measures_df, statistics_df, output_dir: str, name:st
     plt.close()
 
     
-def plot_ratio_over_gen(measures_df, statistics_df, output_dir: str, name:str='ratio_over_gen', num_exps_to_plot: int = inf):
+def plot_ratio_over_gen(measures_df, statistics_df, output_dir: str, name:str='ratio_over_gen', num_exps_to_plot: int = inf, formats:list=['png']):
     # Merge dataframes on 'gen' to align TOTAL and best_of_gen
     merged_df = pd.merge(statistics_df.drop(columns=['TOTAL']), measures_df[['gen', 'TOTAL']], on='gen', how='inner')
     merged_df = merged_df.sort_values(by='gen')
@@ -315,7 +315,7 @@ def plot_ratio_over_gen(measures_df, statistics_df, output_dir: str, name:str='r
     plt.close()
     
 
-def main(measures_file:str, statistics_file:str, output_dir:str, num_exps_to_plot: int, min_gen:int=-inf, max_gen:int=inf):
+def main(measures_file:str, statistics_file:str, output_dir:str, num_exps_to_plot: int, min_gen:int=-inf, max_gen:int=inf, formats:list=['png']):
     measures_df = pd.read_csv(measures_file)
     statistics_df = pd.read_csv(statistics_file)
     statistics_df = statistics_df[statistics_df['best_of_gen'] > 0][statistics_df['best_of_gen'] <= 100]
@@ -340,12 +340,12 @@ def main(measures_file:str, statistics_file:str, output_dir:str, num_exps_to_plo
             # {'time': 60*15, 'col': 'best_of_gen'},
             # {'time': 60*20, 'col': 'best_of_gen'},
         ]
-    plot_statistics_over_total(measures_df, statistics_df, output_dir, markers=markers, name=f'statistics_over_joules_{min_gen}_to_{max_gen}', num_exps_to_plot=num_exps_to_plot)
-    plot_memory_over_joules(measures_df, statistics_df, output_dir, name=f'memory_over_joules_{min_gen}_to_{max_gen}', num_exps_to_plot=num_exps_to_plot)
-    plot_memory_over_gen(measures_df, statistics_df, output_dir, name=f'memory_over_gen_{min_gen}_to_{max_gen}', num_exps_to_plot=num_exps_to_plot)
-    plot_dual_graph(measures_df, statistics_df, output_dir, markers=markers, name=f'dual_over_gen_{min_gen}_to_{max_gen}', num_exps_to_plot=num_exps_to_plot)
-    plot_statistics_over_time(measures_df, statistics_df, output_dir, markers=markers, name=f'statistics_over_time_{min_gen}_to_{max_gen}', num_exps_to_plot=num_exps_to_plot)
-    plot_ratio_over_gen(measures_df, statistics_df, output_dir, name=f'ratio_over_gen_{min_gen}_to_{max_gen}', num_exps_to_plot=num_exps_to_plot)
+    plot_statistics_over_total(measures_df, statistics_df, output_dir, markers=markers, name=f'statistics_over_joules_{min_gen}_to_{max_gen}', num_exps_to_plot=num_exps_to_plot, formats=args.formats)
+    # plot_memory_over_joules(measures_df, statistics_df, output_dir, name=f'memory_over_joules_{min_gen}_to_{max_gen}', num_exps_to_plot=num_exps_to_plot, formats=args.formats)
+    # plot_memory_over_gen(measures_df, statistics_df, output_dir, name=f'memory_over_gen_{min_gen}_to_{max_gen}', num_exps_to_plot=num_exps_to_plot, formats=args.formats)
+    plot_dual_graph(measures_df, statistics_df, output_dir, markers=markers, name=f'dual_over_gen_{min_gen}_to_{max_gen}', num_exps_to_plot=num_exps_to_plot, formats=args.formats)
+    # plot_statistics_over_time(measures_df, statistics_df, output_dir, markers=markers, name=f'statistics_over_time_{min_gen}_to_{max_gen}', num_exps_to_plot=num_exps_to_plot, formats=args.formats)
+    # plot_ratio_over_gen(measures_df, statistics_df, output_dir, name=f'ratio_over_gen_{min_gen}_to_{max_gen}', num_exps_to_plot=num_exps_to_plot, formats=args.formats)
 
 
 
@@ -359,20 +359,29 @@ if __name__ == "__main__":
                     help='Minimum generation to consider in the plots')
     parser.add_argument('--max_gen', type=int, default=6000,
                     help='Maximum generation to consider in the plots')
-    args = parser.parse_args()
-    
-    
-    
-    
-    images_dir = os.path.join(args.experiment_dir, 'imgs')
-    for format in formats:
-        path_format = os.path.join(images_dir, f'{format}s')
-        os.makedirs(path_format, exist_ok=True)
+    parser.add_argument(
+            '--formats', 
+            nargs='+',
+            type=str,
+            help='List of formats (e.g., --formats pdf png jpeg)',
+            default=['json'],
+        )
 
+    args = parser.parse_args()
+
+    images_dir = os.path.join(args.experiment_dir, 'imgs')
+    for format in args.formats:
+        if format not in known_formats:
+            raise ValueError(f"Unknown format '{format}'. Supported formats are: {', '.join(known_formats)}")
+        else:
+            path_format = os.path.join(images_dir, f'{format}s')
+            os.makedirs(path_format, exist_ok=True)
+    
     main(measures_file=os.path.join(args.experiment_dir, 'mean_measures.csv'),
          statistics_file=os.path.join(args.experiment_dir, 'mean_statistics.csv'),
          output_dir=images_dir,
          num_exps_to_plot=args.num_exps_to_plot,
          min_gen=args.min_gen,
-         max_gen=args.max_gen)
+         max_gen=args.max_gen,
+         formats=args.formats)
 
