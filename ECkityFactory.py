@@ -59,16 +59,13 @@ def get_gc_graph(graph_path: str):
         for line in f:
             line = line.strip()
             if not line or line.startswith("c"):
-                continue  # skip comments
+                continue
             if line.startswith("p"):
-                # Example: "p edge 5 7"
                 parts = line.split()
                 n_nodes = int(parts[2])
-                G.add_nodes_from(range(n_nodes))  # create all nodes (0-based)
+                G.add_nodes_from(range(n_nodes))
             elif line.startswith("e"):
-                # Example: "e 1 2"
                 _, u, v = line.split()
-                # DIMACS uses 1-based indexing → convert to 0-based
                 G.add_edge(int(u) - 1, int(v) - 1)
     return G
     
