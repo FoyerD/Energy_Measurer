@@ -5,7 +5,7 @@ import os
 import tomllib
 import numpy as np
 from sympy import latex
-import parse
+import re
 
 
 
@@ -224,7 +224,7 @@ def sort_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def main_table(df: pd.DataFrame) -> pd.DataFrame:
-    cols = [col for col in df.columns if any(metric in col for metric in ["Fitness", "MJ", "MJ/Fitness"]) and "std" not in col]
+    cols = [col for col in df.columns if any(metric in col for metric in ["Fitness", "MJ", "MJ/Fitness"])]
     return df[["instance"] + cols]
 
 def std_table(df: pd.DataFrame) -> pd.DataFrame:
@@ -245,12 +245,22 @@ def get_latex_format(df, pivot=False):
     df = df.round(2)
     bold_coords = set()
 
-    # Define groups
-    mj_cols = [c for c in df.columns if c.startswith("MJ")]
-    fit_cols = [c for c in df.columns if c.startswith("Fitness")]
-    ratio_cols = [c for c in df.columns if c.startswith("MJ/Fitness")]
+# Define groups
+    def filter_mean_col(columns, prefix):
+        return [c for c in columns if c.startswith(prefix) and "std" not in c and "kpoint" not in c]
+    def filter_std_col(columns, prefix):
+        return [c for c in columns if c.startswith(prefix) and "std" in c and "kpoint" not in c]
+    
+    mj_cols = filter_mean_col(df.columns, "MJ_")
+    mj_std_cols = filter_std_col(df.columns, "MJ-")
 
-    # --- Bolding Logic ---
+    fit_cols = filter_mean_col(df.columns, "Fitness")
+    fit_std_cols = filter_std_col(df.columns, "Fitness")
+
+    ratio_cols = filter_mean_col(df.columns, "MJ/Fitness")
+    ratio_std_cols = filter_std_col(df.columns, "MJ/Fitness")
+
+    # --- Bolding Logic (Only applied to mean columns) ---
     for idx, row in df.iterrows():
         def mark_extremes(cols, find_max=True):
             if not cols: return
@@ -266,25 +276,44 @@ def get_latex_format(df, pivot=False):
         mark_extremes(fit_cols, find_max=True)
         mark_extremes(ratio_cols, find_max=True)
 
-    # Format numbers to strings
+    # Format numbers to strings to prepare for combination
     for col in df.columns:
         if col != "instance":
             df[col] = df[col].apply(
                 lambda x: f"{x:.2f}" if isinstance(x, (int, float, np.floating)) else x
             )
-
+        
+    all_std_cols = df.columns[df.columns.str.contains("std")].tolist()
     if pivot:
+        # --- COMBINE MEAN AND STD ---
+        for std_col in all_std_cols:
+            # Map "Metric-std_XYZ" to "Metric_XYZ"
+            mean_col = std_col.replace("-std", "")
+            
+            if mean_col in df.columns:
+                # Merge into: 0.26 ($\pm$ 0.00) or \textbf{0.26} ($\pm$ 0.00)
+                df[mean_col] = df[mean_col].astype(str) + " ($\\pm$ " + df[std_col].astype(str) + ")"
+        
+        # Drop the std columns so they do not pivot into new rows
+        df = df.drop(columns=all_std_cols)
+
+        # --- PIVOT ---
         df_p = df.set_index("instance").T
         
         new_index = []
         metric_map = {"Fitness": "$f$", "MJ": "MJ", "MJ/Fitness": "$f/MJ$"}
 
         for full_name in df_p.index:
-            raw_metric, op, bs, st = full_name.split("_")
-
+            # Safely unpack assuming naming like: MJ_dnc_512_0.0
+            parts = full_name.split("_")
+            raw_metric = parts[0]
+            
             if "kpoint" in full_name:
                 method_name = "One-Point"
-            elif "dnc" in full_name:
+            elif "dnc" in full_name and len(parts) >= 4:
+                op = parts[1]
+                bs = parts[2]
+                st = parts[3]
                 if st == "0.0":
                     method_name = f"DNC bs {bs}"
                 else:
@@ -297,6 +326,7 @@ def get_latex_format(df, pivot=False):
         
         df_p.index = pd.MultiIndex.from_tuples(new_index)
         
+        # Sort rows so they always appear as f, MJ, f/MJ
         df_p = df_p.reindex(["$f$", "MJ", "$f/MJ$"], level=1)
 
         latex_str = df_p.to_latex(
@@ -306,11 +336,15 @@ def get_latex_format(df, pivot=False):
             column_format="ll" + "c" * len(df_p.columns)
         )
         
+        # Cleanups
         latex_str = latex_str.replace("[t]", "")
-        latex_str = latex_str.replace("cline{1-13}", "midrule")
-        return latex_str, bold_coords
+        # Dynamically replace any \cline{} with \midrule, regardless of column count
+        latex_str = re.sub(r"\\cline\{.*?\}", r"\\midrule", latex_str)
 
-    return df.to_latex(index=False, escape=False), bold_coords
+    else:
+        latex_str = df.to_latex(index=False, escape=False)
+
+    return latex_str, bold_coords
 
 def get_latex_format_std(df_std, bold_coords):
     df_std = df_std.copy()
