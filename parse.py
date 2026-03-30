@@ -36,9 +36,9 @@ def transform_gc_fitness(instance, raw_value, metadata_path="datasets_dnc/graph_
 
     return maximizing_fitness
 
-def transform_measures(df: pd.DataFrame):
-    df['PKG'] = df['PKG'].astype(float) / 1000
-    df['GPU'] = df['GPU'].astype(float) / 1000
+def transform_measures(df: pd.DataFrame, base_pkg:float=0.0, base_gpu:float=0.0):
+    df['PKG'] = (df['PKG'].astype(float) - base_pkg) / 1000
+    df['GPU'] = (df['GPU'].astype(float) - base_gpu) / 1000
     df['PKG'] = df['PKG'].cumsum()
     df['GPU'] = df['GPU'].cumsum()
     df['TOTAL'] = df['GPU'] + df['PKG']
@@ -133,7 +133,7 @@ def merge_files(measures_dir, statistics_dir, out_dir, domain, instance, base_pk
     for root, dirs, files in os.walk(measures_dir):
         for file in files:
             curr_df = pd.read_csv(os.path.join(root, file))
-            curr_df = transform_measures(curr_df)
+            curr_df = transform_measures(curr_df, base_pkg=base_pkg, base_gpu=base_gpu)
             measures.append(preprocess_df(curr_df))
 
     # collecting statistics dataframes
