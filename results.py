@@ -45,7 +45,7 @@ def extract_toml_fields(toml_path: str):
         "instance": dataset_name.replace("_", "\_"),
         "crossover_name": crossover_name,
         "bs": batch_size,
-        "ts": training_scheduling,
+        "st": training_scheduling,
     }
 
 
@@ -119,7 +119,7 @@ Returns a dict with dfs, each row corresponding to an experiment, and columns fo
 - instance
 - crossover_name
 - bs (if applicable, else NaN)
-- ts (if applicable, else NaN)
+- st (if applicable, else NaN)
 - MJ
 - MJ-std
 - Fitness
@@ -157,20 +157,20 @@ def pivot_df(df: pd.DataFrame) -> pd.DataFrame:
     """
     Given a df of multiple experiments of the same domain (not instances), pivot it so each row is for an instance, and the columns are:
     1. Instance name.
-    2. The Fitness for each configuration "{crossover_name}_{bs}_{ts}".
-    3. The Fitness_std for each configuration "{crossover_name}_{bs}_{ts}".
-    4. The MJ for each configuration "{crossover_name}_{bs}_{ts}".
-    5. The MJ_std for each configuration "{crossover_name}_{bs}_{ts}".
-    6. The Hours for each configuration "{crossover_name}_{bs}_{ts}".
-    7. The Hours_std for each configuration "{crossover_name}_{bs}_{ts}".
-    8. The MJ/Fitness for each configuration "{crossover_name}_{bs}_{ts}".
-    9. The MJ/Fitness_std for each configuration "{crossover_name}_{bs}_{ts}".
+    2. The Fitness for each configuration "{crossover_name}_{bs}_{st}".
+    3. The Fitness_std for each configuration "{crossover_name}_{bs}_{st}".
+    4. The MJ for each configuration "{crossover_name}_{bs}_{st}".
+    5. The MJ_std for each configuration "{crossover_name}_{bs}_{st}".
+    6. The Hours for each configuration "{crossover_name}_{bs}_{st}".
+    7. The Hours_std for each configuration "{crossover_name}_{bs}_{st}".
+    8. The MJ/Fitness for each configuration "{crossover_name}_{bs}_{st}".
+    9. The MJ/Fitness_std for each configuration "{crossover_name}_{bs}_{st}".
     """
 
     df = df.copy().drop(columns=['domain_name'])  # drop domain_name as it's the same for all rows
     df['bs'] = pd.to_numeric(df['bs'], errors='coerce').fillna(0).astype(int)  # convert bs to int, treating NaN as 0
-    df['ts'] = pd.to_numeric(df['ts'], errors='coerce').fillna(0)  # convert ts to int, treating NaN as 0
-    df['config'] = df.apply(lambda row: f"{row['crossover_name']}_{row['bs']}_{row['ts']}", axis=1)
+    df['st'] = pd.to_numeric(df['st'], errors='coerce').fillna(0)  # convert st to int, treating NaN as 0
+    df['config'] = df.apply(lambda row: f"{row['crossover_name']}_{row['bs']}_{row['st']}", axis=1)
 
     pivoted = df.pivot(index='instance', columns='config', values=['Fitness', 'Fitness-std', 'MJ', 'MJ-std', 'Hours', 'Hours-std', 'MJ/Fitness', 'MJ/Fitness-std', 'GPU', 'GPU-std', 'PKG', 'PKG-std'])
     pivoted.columns = ['_'.join(col).strip() for col in pivoted.columns.values]
@@ -204,17 +204,17 @@ def sort_columns(df: pd.DataFrame) -> pd.DataFrame:
         if col == "instance":
             return (-1, 0, 0, 0)  # force first
 
-        metric, algo, batch, ts = col.split("_")
+        metric, algo, batch, st = col.split("_")
 
         bs = int(batch)
 
-        ts = float(ts)
-        ts = -100 if ts == 0 else -ts
+        st = float(st)
+        st = -100 if st == 0 else -st
 
         return (
             algo_order.get(algo, 99),
             bs,
-            ts,
+            st,
             metric_order.get(metric, 99)
         )
 
@@ -239,38 +239,76 @@ def time_table(df: pd.DataFrame) -> pd.DataFrame:
 
 
 
-def get_latex_format(df):
+
+def get_latex_format(df, pivot=False):
     df = df.copy()
     df = df.round(2)
     bold_coords = set()
 
-    mj_cols = [c for c in df.columns if c.startswith("MJ_") and "kpoint" not in c]
-    time_cols = [c for c in df.columns if c.startswith("Hours_") and "kpoint" not in c]
-    fit_cols = [c for c in df.columns if c.startswith("Fitness_")]
-    ratio_cols = [c for c in df.columns if c.startswith("MJ/Fitness_") and "kpoint" not in c]
+    # Define groups
+    mj_cols = [c for c in df.columns if c.startswith("MJ")]
+    fit_cols = [c for c in df.columns if c.startswith("Fitness")]
+    ratio_cols = [c for c in df.columns if c.startswith("MJ/Fitness")]
 
+    # --- Bolding Logic ---
     for idx, row in df.iterrows():
         def mark_extremes(cols, find_max=True):
+            if not cols: return
             vals = pd.to_numeric(row[cols], errors='coerce')
-            vals_for_calc = vals.replace({np.nan: -np.inf if find_max else np.inf})
-            target = vals_for_calc.max() if find_max else vals_for_calc.min()            
-            matches = vals[vals.round(2) == round(target, 4)].index
-            
+            if vals.isna().all(): return
+            target = vals.max() if find_max else vals.min()            
+            matches = vals[np.isclose(vals.astype(float), float(target), atol=1e-4)].index
             for col in matches:
-                if pd.notna(row[col]):
-                    bold_coords.add((idx, col))
-                    df.at[idx, col] = f"\\textbf{{{row[col]}}}"
+                bold_coords.add((idx, col))
+                df.at[idx, col] = f"\\textbf{{{row[col]:.2f}}}"
 
         mark_extremes(mj_cols, find_max=False)
-        mark_extremes(time_cols, find_max=False)
         mark_extremes(fit_cols, find_max=True)
         mark_extremes(ratio_cols, find_max=True)
 
+    # Format numbers to strings
     for col in df.columns:
         if col != "instance":
             df[col] = df[col].apply(
                 lambda x: f"{x:.2f}" if isinstance(x, (int, float, np.floating)) else x
             )
+
+    if pivot:
+        df_p = df.set_index("instance").T
+        
+        new_index = []
+        metric_map = {"Fitness": "$f$", "MJ": "MJ", "MJ/Fitness": "$f/MJ$"}
+
+        for full_name in df_p.index:
+            raw_metric, op, bs, st = full_name.split("_")
+
+            if "kpoint" in full_name:
+                method_name = "One-Point"
+            elif "dnc" in full_name:
+                if st == "0.0":
+                    method_name = f"DNC bs {bs}"
+                else:
+                    method_name = f"DNC st {st}"        
+            else:
+                method_name = full_name
+            
+            metric_tex = metric_map.get(raw_metric, raw_metric)
+            new_index.append((method_name, metric_tex))
+        
+        df_p.index = pd.MultiIndex.from_tuples(new_index)
+        
+        df_p = df_p.reindex(["$f$", "MJ", "$f/MJ$"], level=1)
+
+        latex_str = df_p.to_latex(
+            index=True,
+            multirow=True,
+            escape=False,
+            column_format="ll" + "c" * len(df_p.columns)
+        )
+        
+        latex_str = latex_str.replace("[t]", "")
+        latex_str = latex_str.replace("cline{1-13}", "midrule")
+        return latex_str, bold_coords
 
     return df.to_latex(index=False, escape=False), bold_coords
 
@@ -297,27 +335,28 @@ if __name__ == "__main__":
     assert len(sys.argv) >= 2, "Usage: python collect_experiments.py <experiments_dir>"
     
     exps_path = sys.argv[1]
-    domains = ['bpp', 'graph_coloring'] # 'graph_coloring'
-    if len(sys.argv) == 3:
-        parsed_dfs = {domain: pd.read_csv(f"{exps_path}/{domain}_results.csv") for domain in domains}
-    else:
-        dfs = get_data(exps_path, domains)
-        parsed_dfs = {domain_name: sort_columns(pivot_df(df)) for domain_name, df in dfs.items()}
-        for domain_name, df in parsed_dfs.items():
-            df.to_csv(f"{exps_path}/{domain_name}_results.csv", index=False)
+    pivot = len(sys.argv) == 3 and sys.argv[2] == "pivot"
+    domains = ['bpp', 'graph_coloring']
+
+    dfs = get_data(exps_path, domains)
+    parsed_dfs = {domain_name: sort_columns(pivot_df(df)) for domain_name, df in dfs.items()}
+    for domain_name, df in parsed_dfs.items():
+        df.to_csv(f"{exps_path}/{domain_name}_results.csv", index=False)
 
     for domain_name, df in parsed_dfs.items():
         main_df = main_table(df)
         std_df = std_table(df)
         time_df = time_table(df)
 
-        latex_main, bold_map = get_latex_format(main_df)
-        latex_std = get_latex_format_std(std_df, bold_map)
+        latex_main, bold_map = get_latex_format(main_df, pivot=pivot)
+        if (not pivot):
+            latex_std = get_latex_format_std(std_df, bold_map)
         latex_time, _ = get_latex_format(time_df)
 
         print(f"-----{domain_name}-----")
         print(latex_main)
         print("----")
-        print(latex_std)
-        print("----")
+        if (not pivot):
+            print(latex_std)
+            print("----")
         print(latex_time)
