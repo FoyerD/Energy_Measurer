@@ -16,6 +16,8 @@ graph_baselines.csv
 # C extensions
 *.so
 
+# vscode
+.vscode/
 
 # Distribution / packaging
 .Python
