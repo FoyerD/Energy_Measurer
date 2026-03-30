@@ -335,13 +335,17 @@ if __name__ == "__main__":
     assert len(sys.argv) >= 2, "Usage: python collect_experiments.py <experiments_dir>"
     
     exps_path = sys.argv[1]
-    pivot = len(sys.argv) == 3 and sys.argv[2] == "pivot"
+    pivot = "pivot" in sys.argv
+    use_existing = "existing" in sys.argv
     domains = ['bpp', 'graph_coloring']
 
-    dfs = get_data(exps_path, domains)
-    parsed_dfs = {domain_name: sort_columns(pivot_df(df)) for domain_name, df in dfs.items()}
-    for domain_name, df in parsed_dfs.items():
-        df.to_csv(f"{exps_path}/{domain_name}_results.csv", index=False)
+    if use_existing:
+        parsed_dfs = {domain_name: pd.read_csv(f"{exps_path}/{domain_name}_results.csv") for domain_name in domains}
+    else:
+        dfs = get_data(exps_path, domains)
+        parsed_dfs = {domain_name: sort_columns(pivot_df(df)) for domain_name, df in dfs.items()}
+        for domain_name, df in parsed_dfs.items():
+            df.to_csv(f"{exps_path}/{domain_name}_results.csv", index=False)
 
     for domain_name, df in parsed_dfs.items():
         main_df = main_table(df)
