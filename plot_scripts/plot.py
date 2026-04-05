@@ -274,46 +274,6 @@ def plot_memory_over_joules(measures_df, statistics_df, output_dir: str, name:st
     plt.close()
 
     
-def plot_ratio_over_gen(measures_df, statistics_df, output_dir: str, name:str='ratio_over_gen', num_exps_to_plot: int = inf, formats:list=['png']):
-    # Merge dataframes on 'gen' to align TOTAL and best_of_gen
-    merged_df = pd.merge(statistics_df.drop(columns=['TOTAL']), measures_df[['gen', 'TOTAL']], on='gen', how='inner')
-    merged_df = merged_df.sort_values(by='gen')
-    merged_df['best_of_gen/TOTAL'] = merged_df['best_of_gen'] / merged_df['TOTAL']
-
-    # Plot ratio vs gen
-    plt.figure(figsize=(10, 6))
-    plt.plot(
-        merged_df['gen'],
-        merged_df['best_of_gen/TOTAL'],
-        label='Best of Gen Fitness / Total Energy',
-        color='purple'
-    )
-    
-    # Optional: add confidence band using std
-    if 'best_of_gen/TOTAL_std' in statistics_df.columns:
-        std_map = statistics_df.set_index('gen')['best_of_gen/TOTAL_std']
-        std_vals = merged_df['gen'].map(std_map).fillna(0)
-        plt.fill_between(
-            merged_df['gen'],
-            merged_df['best_of_gen/TOTAL'] - std_vals,
-            merged_df['best_of_gen/TOTAL'] + std_vals,
-            color='purple',
-            alpha=0.2,
-            label='Std Dev'
-        )
-    
-    add_trained_markers(merged_df, 'gen', plt, num_exps_to_plot)
-
-    plt.xlabel('Generation')
-    plt.ylabel('Best of Gen Fitness / Total Energy (Fitness/Joules)')
-    plt.title('Fitness per Joule Over Generations')
-    # plt.legend(loc='upper left')
-    plt.grid(True)
-    
-    for format in formats:
-        plt.savefig(f'{output_dir}/{format}s/{name}.{format}')
-    plt.close()
-    
 
 def main(measures_file:str, statistics_file:str, output_dir:str, num_exps_to_plot: int, min_gen:int=-inf, max_gen:int=inf, formats:list=['png']):
     measures_df = pd.read_csv(measures_file)
