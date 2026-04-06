@@ -43,7 +43,7 @@ def main(output_dir:str, setup_file:str=None):
     elif(domain_name == 'graph_coloring'):
         evaluator, individual_length, min_bound, max_bound = EckityFactory.make_gc_evaluator(**config['domain']['args'])
         creator = GAIntegerStringVectorCreator(length=individual_length, bounds=(min_bound, max_bound))
-        higher_is_better = False
+        higher_is_better = True
 
     else:
         raise ValueError(f'Domain {domain_name} not recognized')
