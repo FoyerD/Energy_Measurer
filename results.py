@@ -245,7 +245,7 @@ def get_latex_format(df, pivot=False):
     df = df.round(2)
     bold_coords = set()
 
-# Define groups
+    # Define groups
     def filter_mean_col(columns, prefix):
         return [c for c in columns if c.startswith(prefix) and "std" not in c and "kpoint" not in c]
     def filter_std_col(columns, prefix):
@@ -309,15 +309,15 @@ def get_latex_format(df, pivot=False):
             raw_metric = parts[0]
             
             if "kpoint" in full_name:
-                method_name = "One-Point"
+                method_name = "One\\newline Point"
             elif "dnc" in full_name and len(parts) >= 4:
                 op = parts[1]
                 bs = parts[2]
                 st = parts[3]
                 if st == "0.0":
-                    method_name = f"DNC bs {bs}"
+                    method_name = f"DNC\\newline bs={bs}"
                 else:
-                    method_name = f"DNC st {st}"        
+                    method_name = f"DNC\\newline st={st}"        
             else:
                 method_name = full_name
             
@@ -340,6 +340,7 @@ def get_latex_format(df, pivot=False):
         latex_str = latex_str.replace("[t]", "")
         # Dynamically replace any \cline{} with \midrule, regardless of column count
         latex_str = re.sub(r"\\cline\{.*?\}", r"\\midrule", latex_str)
+        latex_str = re.sub(r"\{\*\}", r"{1.5cm}", latex_str)
 
     else:
         latex_str = df.to_latex(index=False, escape=False)
