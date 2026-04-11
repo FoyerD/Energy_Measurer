@@ -12,6 +12,8 @@ scripts/get_exp.sh
 # Databases
 graph_baselines.csv
 
+tmp/
+
 
 # C extensions
 *.so
