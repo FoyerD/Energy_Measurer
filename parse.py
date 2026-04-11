@@ -7,12 +7,6 @@ from functools import reduce
 from pathlib import Path
         
 _gc_metadata_cache = None
-import pandas as pd
-from pathlib import Path
-
-# Module-level cache for O(1) metadata lookup
-_gc_metadata_cache = None
-
 def transform_gc_fitness(instance, raw_value, metadata_path="datasets_dnc/graph_coloring/graph_baselines.csv", penalty=1000):
     global _gc_metadata_cache
     
