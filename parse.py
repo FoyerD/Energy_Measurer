@@ -8,6 +8,9 @@ from pathlib import Path
         
 _gc_metadata_cache = None
 def transform_gc_fitness(instance, raw_value, metadata_path="datasets_dnc/graph_coloring/graph_baselines.csv", penalty=1000):
+    if (raw_value < 1):
+        return raw_value
+
     global _gc_metadata_cache
     
     if _gc_metadata_cache is None:
