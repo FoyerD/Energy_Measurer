@@ -223,9 +223,9 @@ def sort_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def main_table(df: pd.DataFrame) -> pd.DataFrame:
-    cols = [col for col in df.columns if any(metric in col for metric in ["Fitness", "MJ", "MJ/Fitness"])]
+    # cols = [col for col in df.columns if any(metric in col for metric in ["Fitness", "MJ", "MJ/Fitness"])]
     unwanted_instances = ["BPP\_195", "BPP\_359", "BPP\_360"]
-    df = df[["instance"] + cols]
+    # df = df[["instance"] + cols]
     df = df[~df['instance'].isin(unwanted_instances)]
     return df
 
@@ -254,13 +254,9 @@ def get_latex_format(df, pivot=False):
         return [c for c in columns if c.startswith(prefix) and "std" in c and "kpoint" not in c]
     
     mj_cols = filter_mean_col(df.columns, "MJ_")
-    mj_std_cols = filter_std_col(df.columns, "MJ-")
-
     fit_cols = filter_mean_col(df.columns, "Fitness")
-    fit_std_cols = filter_std_col(df.columns, "Fitness")
-
     ratio_cols = filter_mean_col(df.columns, "MJ/Fitness")
-    ratio_std_cols = filter_std_col(df.columns, "MJ/Fitness")
+    hours_cols = filter_mean_col(df.columns, "Hours")
 
     # --- Bolding Logic (Only applied to mean columns) ---
     for idx, row in df.iterrows():
@@ -277,6 +273,7 @@ def get_latex_format(df, pivot=False):
         mark_extremes(mj_cols, find_max=False)
         mark_extremes(fit_cols, find_max=True)
         mark_extremes(ratio_cols, find_max=True)
+        mark_extremes(hours_cols, find_max=False)
 
     # Format numbers to strings to prepare for combination
     for col in df.columns:
@@ -303,7 +300,7 @@ def get_latex_format(df, pivot=False):
         df_p = df.set_index("instance").T
         
         new_index = []
-        metric_map = {"Fitness": "$f$", "MJ": "MJ", "MJ/Fitness": "$f/MJ$"}
+        metric_map = {"Fitness": "$f$", "MJ": "MJ", "MJ/Fitness": "$f/MJ$", "Hours": "t"}
 
         for full_name in df_p.index:
             # Safely unpack assuming naming like: MJ_dnc_512_0.0
@@ -329,7 +326,7 @@ def get_latex_format(df, pivot=False):
         df_p.index = pd.MultiIndex.from_tuples(new_index)
         
         # Sort rows so they always appear as f, MJ, f/MJ
-        df_p = df_p.reindex(["$f$", "MJ", "$f/MJ$"], level=1)
+        df_p = df_p.reindex(["$f$", "MJ", "$f/MJ$", "t"], level=1)
 
         latex_str = df_p.to_latex(
             index=True,
@@ -396,8 +393,8 @@ if __name__ == "__main__":
 
         print(f"-----{domain_name}-----")
         print(latex_main)
-        print("----")
-        if (not pivot):
-            print(latex_std)
-            print("----")
-        print(latex_time)
+        # print("----")
+        # if (not pivot):
+        #     print(latex_std)
+        #     print("----")
+        # print(latex_time)
