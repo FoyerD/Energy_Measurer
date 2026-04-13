@@ -1,4 +1,3 @@
-
 import pandas as pd
 import sys
 import os
@@ -225,7 +224,10 @@ def sort_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 def main_table(df: pd.DataFrame) -> pd.DataFrame:
     cols = [col for col in df.columns if any(metric in col for metric in ["Fitness", "MJ", "MJ/Fitness"])]
-    return df[["instance"] + cols]
+    unwanted_instances = ["BPP\_195", "BPP\_359", "BPP\_360"]
+    df = df[["instance"] + cols]
+    df = df[~df['instance'].isin(unwanted_instances)]
+    return df
 
 def std_table(df: pd.DataFrame) -> pd.DataFrame:
     cols = [col for col in df.columns if any(metric in col for metric in ["Fitness", "MJ", "MJ/Fitness"]) and "std" in col]
