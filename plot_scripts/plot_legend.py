@@ -10,13 +10,13 @@ plt.rcParams.update({
 fig, ax = plt.subplots(figsize=(6, 0.5)) 
 
 
-line1, = ax.plot([], [], color='#d62728', lw=2, label='PKG MJ')
-line2, = ax.plot([], [], color='#1f77b4', lw=2, label='GPU MJ')
+# line1, = ax.plot([], [], color='#d62728', lw=2, label='PKG MJ')
+# line2, = ax.plot([], [], color='#1f77b4', lw=2, label='GPU MJ')
 line3, = ax.plot([], [], color='#9467bd', lw=2, label='Total MJ')
 line4, = ax.plot([], [], color='#2ca02c', lw=2, label='Best Fitness')
 
 legend = ax.legend(
-    handles=[line1, line2, line3, line4],
+    handles=[line3, line4],
     loc='center',
     ncol=4,
     frameon=True,
