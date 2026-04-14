@@ -151,9 +151,9 @@ def merge_files(measures_dir, statistics_dir, out_dir, domain, instance, base_pk
         gen_mapping = gened_measures_df.set_index('gen')['TOTAL']
         gened_statistics_df['best_of_gen/TOTAL'] = gened_statistics_df['best_of_gen'] / gen_mapping.reindex(gened_statistics_df['gen']).values
         gened_statistics_df['best_of_gen/TOTAL'] = gened_statistics_df['best_of_gen/TOTAL'].ffill().bfill()
-        if (len(gened_statistics_df) != len(gened_measures_df)):
-            print(f"stat num rows: {len(gened_statistics_df)}, mes num rows: {len(gened_measures_df)}")
-            print(f"{gened_statistics_df['best_of_gen'].iloc[-1]}/{gened_measures_df['TOTAL'].iloc[-1]}={gened_statistics_df['best_of_gen/TOTAL'].iloc[-1]}")
+        # if (len(gened_statistics_df) != len(gened_measures_df)):
+        #     print(f"stat num rows: {len(gened_statistics_df)}, mes num rows: {len(gened_measures_df)}")
+        #     print(f"{gened_statistics_df['best_of_gen'].iloc[-1]}/{gened_measures_df['TOTAL'].iloc[-1]}={gened_statistics_df['best_of_gen/TOTAL'].iloc[-1]}")
 
         gened_measures.append(gened_measures_df)
         gened_statistics.append(gened_statistics_df)
