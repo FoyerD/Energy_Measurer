@@ -224,7 +224,7 @@ def sort_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 def main_table(df: pd.DataFrame) -> pd.DataFrame:
     # cols = [col for col in df.columns if any(metric in col for metric in ["Fitness", "MJ", "MJ/Fitness"])]
-    unwanted_instances = ["BPP\_195", "BPP\_359", "BPP\_360"]
+    unwanted_instances = ["BPP\\_195", "BPP\\_359", "BPP\\_360", "mulsol.i.2"]
     # df = df[["instance"] + cols]
     df = df[~df['instance'].isin(unwanted_instances)]
     return df
