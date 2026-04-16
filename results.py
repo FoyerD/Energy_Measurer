@@ -5,8 +5,12 @@ import tomllib
 import numpy as np
 from sympy import latex
 import re
+from scipy.stats import friedmanchisquare, wilcoxon
+from statsmodels.stats.multitest import multipletests
+from itertools import combinations
 
 
+unwanted_instances = ["BPP\\_195", "BPP\\_359", "BPP\\_360"]
 
 
 def extract_toml_fields(toml_path: str):
@@ -224,7 +228,6 @@ def sort_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 def main_table(df: pd.DataFrame) -> pd.DataFrame:
     # cols = [col for col in df.columns if any(metric in col for metric in ["Fitness", "MJ", "MJ/Fitness"])]
-    unwanted_instances = ["BPP\\_195", "BPP\\_359", "BPP\\_360", "mulsol.i.2"]
     # df = df[["instance"] + cols]
     df = df[~df['instance'].isin(unwanted_instances)]
     return df
@@ -363,7 +366,54 @@ def get_latex_format_std(df_std, bold_coords):
                 df_std.at[idx, col] = formatted_val
 
     return df_std.to_latex(index=False, escape=False)
+
+
+def wilcoxon_test(df):
+    """
+    Performs pairwise Wilcoxon signed-rank tests for all configurations 
+    within each metric found in the DataFrame.
+    """
+    # 1. Identify mean columns (exclude 'instance' and '-std' columns)
+    mean_cols = [c for c in df.columns if "-std" not in c and c != "instance"]
     
+    # 2. Group columns by metric (the part before the first underscore)
+    metric_groups = {}
+    for col in mean_cols:
+        metric_name = col.split('_')[0]
+        if metric_name not in metric_groups:
+            metric_groups[metric_name] = []
+        metric_groups[metric_name].append(col)
+    
+    results = []
+
+    # 3. Iterate through each metric and its associated configurations
+    for metric, cols in metric_groups.items():
+        # Generate all unique pairs of configurations for this metric
+        for col_a, col_b in combinations(cols, 2):
+            # Extract configuration details for cleaner reporting
+            # (Removes the metric prefix from the comparison name)
+            config_a = "_".join(col_a.split('_')[1:])
+            config_b = "_".join(col_b.split('_')[1:])
+            
+            try:
+                # Perform the paired test
+                # zero_method='pratt' is used to handle identical values in small samples
+                stat, p_val = wilcoxon(df[col_a], df[col_b], zero_method='pratt')
+            except ValueError:
+                # This occurs if all differences between pairs are zero
+                stat, p_val = None, 1.0
+
+            results.append({
+                "Metric": metric,
+                "Config_A": config_a,
+                "Config_B": config_b,
+                "Statistic": stat,
+                "p-value": p_val,
+                "Significant": p_val < 0.05 if p_val is not None else False
+            })
+
+    return pd.DataFrame(results)
+
 
 if __name__ == "__main__":
     assert len(sys.argv) >= 2, "Usage: python collect_experiments.py <experiments_dir>"
@@ -382,7 +432,10 @@ if __name__ == "__main__":
             df.to_csv(f"{exps_path}/{domain_name}_results.csv", index=False)
 
     for domain_name, df in parsed_dfs.items():
+        print(f"-------------{domain_name}-------------")
         main_df = main_table(df)
+        wilc_main = wilcoxon_test(main_df)
+        # wilc_main.to_csv(f"main_wilcoxon_{domain_name}.csv")
         std_df = std_table(df)
         time_df = time_table(df)
 
@@ -391,8 +444,10 @@ if __name__ == "__main__":
             latex_std = get_latex_format_std(std_df, bold_map)
         latex_time, _ = get_latex_format(time_df)
 
-        print(f"-----{domain_name}-----")
+        print("----main table   ---")
         print(latex_main)
+        print("----wilcoxon test---")
+        print(wilc_main.to_string())
         # print("----")
         # if (not pivot):
         #     print(latex_std)
