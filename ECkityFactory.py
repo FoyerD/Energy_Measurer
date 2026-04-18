@@ -145,7 +145,7 @@ def create_simple_evo(
         breeder=breeder if breeder is not None else SimpleBreeder(),
         max_workers=max_workers,
         max_generation=max_generation,
-        statistics=statistics if statistics is not None else BestAverageWorstStatistics(should_print=False), random_seed=4242,should_print=False
+        statistics=statistics if statistics is not None else BestAverageWorstStatistics(verbose=False), random_seed=4242,verbose=False
     )
     if(loggers is not None and log_events is not None
         and len(loggers) == len(log_events)):

@@ -8,7 +8,6 @@ import ECkityFactory as EckityFactory
 from DNC_mid_train.DNC_eckity_wrapper import GAIntegerStringVectorCreator
 from Logger import Logger
 from eckity.genetic_operators.selections.tournament_selection import TournamentSelection
-from eckity.algorithms.simple_evolution import AFTER_GENERATION_EVENT_NAME
 import tomllib
 from torch.cuda import is_available as is_cuda_aviable
 from DNC_mid_train.DNC_eckity_wrapper import DeepNeuralCrossoverConfig
@@ -96,7 +95,7 @@ def main(output_dir:str, setup_file:str=None):
                                                            higher_is_better=higher_is_better,
                                                            operators_sequence=[crossover_op, mutation_op],
                                                            loggers=[statistics_logger],
-                                                           log_events=[AFTER_GENERATION_EVENT_NAME])
+                                                           log_events=["after_generation"])
     
     statistics_logger.add_best_of_gen_col(evo_algo)
     statistics_logger.add_gen_col(evo_algo)
