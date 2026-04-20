@@ -19,7 +19,7 @@ def get_name(config):
 
     crossover_name = config['crossover']['name']
     if(crossover_name == 'dnc'):
-        exp_dir_name += f"{crossover_name}_bz{config['crossover']['args']['dnc_config']['batch_size']}_fe{config['crossover']['args']['dnc_config']['fitness_epsilon']}__"
+        exp_dir_name += f"{crossover_name}_bz{config['crossover']['args']['dnc_config']['batch_size']}_st{config['crossover']['args']['dnc_config']['scheduling_threshold']}__"
     else:
         exp_dir_name += f"{crossover_name}__"
 

@@ -2,8 +2,8 @@ from eckity.algorithms.simple_evolution import SimpleEvolution
 from eckity.subpopulation import Subpopulation
 import json
 import numpy as np
-from DNC_mid_train.DNC_eckity_wrapper import DeepNeuralCrossover, DeepNeuralCrossoverConfig
-from DNC_mid_train import dnc_runner_eckity
+from DNC.DNC_eckity_wrapper import DeepNeuralCrossover, DeepNeuralCrossoverConfig
+from DNC import dnc_runner_eckity
 from eckity.evaluators import IndividualEvaluator
 from eckity.breeders import Breeder, SimpleBreeder
 from eckity.genetic_operators.crossovers.vector_k_point_crossover import VectorKPointsCrossover

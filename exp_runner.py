@@ -5,12 +5,12 @@ from eckity.creators import Creator
 from eckity.genetic_operators import GeneticOperator
 from eckity.evaluators import IndividualEvaluator
 import ECkityFactory as EckityFactory
-from DNC_mid_train.DNC_eckity_wrapper import GAIntegerStringVectorCreator
+from DNC.DNC_eckity_wrapper import GAIntegerStringVectorCreator
 from Logger import Logger
 from eckity.genetic_operators.selections.tournament_selection import TournamentSelection
 import tomllib
 from torch.cuda import is_available as is_cuda_aviable
-from DNC_mid_train.DNC_eckity_wrapper import DeepNeuralCrossoverConfig
+from DNC.DNC_eckity_wrapper import DeepNeuralCrossoverConfig
 
 def main(output_dir:str, setup_file:str=None):
 

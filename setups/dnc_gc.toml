@@ -9,7 +9,7 @@
         probability = 0.5
         [crossover.args.dnc_config]
             batch_size = 2048
-            fitness_epsilon = 0.1
+            scheduling_threshold = 0.1
                 embedding_dim = 32
 
 [mutation]
