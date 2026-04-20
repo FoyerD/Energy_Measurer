@@ -42,14 +42,15 @@ if [ -z "$SETUP_FILE" ]; then
 fi
 if [ ! -f "$SETUP_FILE" ]; then
 		echo "Setup file $SETUP_FILE does not exist."
-		exit1
+		exit 1
 fi
-if [ ! -z "$PYTHON_COMMAND" ]; then
+if [ -z "$PYTHON_COMMAND" ]; then
         echo "Please provide full path to a python binary using -p."
+        exit 1
 fi
 if [ ! -f "$PYTHON_COMMAND" ]; then
 		echo "Python binary $PYTHON_COMMAND does not exist."
-		exit1
+		exit 1
 fi
 
 EXP_DIR=$(python exp_namer.py $SETUP_FILE)
