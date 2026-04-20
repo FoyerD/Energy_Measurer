@@ -53,7 +53,7 @@ if [ ! -f "$PYTHON_COMMAND" ]; then
 		exit 1
 fi
 
-EXP_DIR=$(python exp_namer.py $SETUP_FILE)
+EXP_DIR=$($PYTHON_COMMAND exp_namer.py $SETUP_FILE)
 status=$?
 if [ $status -ne 0 ]; then
     echo "Naming of exp dir failed with exit code $status"
