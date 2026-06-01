@@ -66,6 +66,9 @@ def main(output_dir:str, setup_file:str=None):
                                                    **config['crossover']['args'])
         
     elif(crossover_name == 'kpoint'):
+        if (config['crossover']['args']['k'] == 'half'):
+            config['crossover']['args']['k'] = individual_length // 2
+
         crossover_op = EckityFactory.create_kpoint_crossover(**config['crossover']['args'])
     else:
         raise ValueError(f'Operator {crossover_name} not recognized')
@@ -106,7 +109,7 @@ def main(output_dir:str, setup_file:str=None):
         statistics_logger.update_column("TRAINED", lambda: False)
 
     print(f"--{setup_file}--")
-    # Start the experimen{config
+    # Start the experimen
     evo_algo.evolve()
     evo_algo.execute()
     
