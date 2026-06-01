@@ -41,7 +41,7 @@ def extract_toml_fields(toml_path: str):
     if crossover_name == "dnc":
         dnc_conf = crossover_args.get("dnc_config", {})
         batch_size = dnc_conf.get("batch_size", np.nan)
-        training_scheduling = dnc_conf.get("fitness_epsilon", np.nan)
+        training_scheduling = dnc_conf.get("scheduling_threshold", np.nan)
 
     return {
         "domain_name": domain_name,

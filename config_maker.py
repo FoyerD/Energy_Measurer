@@ -34,7 +34,7 @@ for base_config_path in base_configs_paths:
                 change_instance(cfg, domain, dataset_name)
                 if("dnc" in base_config_path):
                     cfg["crossover"]["args"]["dnc_config"]["batch_size"] = batch_size
-                    cfg["crossover"]["args"]["dnc_config"]["fitness_epsilon"] = st 
+                    cfg["crossover"]["args"]["dnc_config"]["scheduling_threshold"] = st 
                     filename = f"config_{dataset_name}_bs{batch_size}_st{st}.toml"
                 else:
                     filename = f"config_{dataset_name}_kpoint.toml"
