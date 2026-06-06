@@ -50,21 +50,21 @@ def plot_dual_graph(measures_df, statistics_df, output_dir:str, markers:list, na
     axes[0].tick_params(axis='both', labelsize=18)
     axes[1].tick_params(axis='both', labelsize=18)
 
-    axes[0].plot(measures_df['gen'], measures_df['PKG'], color='red', label='PKG MJ')
-    axes[0].fill_between(
-        measures_df['gen'],
-        measures_df['PKG'] - measures_df['PKG_std'],
-        measures_df['PKG'] + measures_df['PKG_std'],
-        color='red', alpha=0.2
-    )
+    # axes[0].plot(measures_df['gen'], measures_df['PKG'], color='red', label='PKG MJ')
+    # axes[0].fill_between(
+    #     measures_df['gen'],
+    #     measures_df['PKG'] - measures_df['PKG_std'],
+    #     measures_df['PKG'] + measures_df['PKG_std'],
+    #     color='red', alpha=0.2
+    # )
 
-    axes[0].plot(measures_df['gen'], measures_df['GPU'], color='blue', label='GPU MJ')
-    axes[0].fill_between(
-        measures_df['gen'],
-        measures_df['GPU'] - measures_df['GPU_std'],
-        measures_df['GPU'] + measures_df['GPU_std'],
-        color='blue', alpha=0.2
-    )
+    # axes[0].plot(measures_df['gen'], measures_df['GPU'], color='blue', label='GPU MJ')
+    # axes[0].fill_between(
+    #     measures_df['gen'],
+    #     measures_df['GPU'] - measures_df['GPU_std'],
+    #     measures_df['GPU'] + measures_df['GPU_std'],
+    #     color='blue', alpha=0.2
+    # )
     
     
     axes[0].plot(measures_df['gen'], measures_df['TOTAL'], color='purple', label='Total MJ')
