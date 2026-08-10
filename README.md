@@ -23,7 +23,7 @@ Measurement scripts are located in the `scripts/` directory and generally requir
     * `-r`: Setup command (binary). Defaults to copying the config to the output. If set, it moves it to config.
     * *Example Usage:*
       ```bash
-      sudo scripts/measure.sh -n 2 -s setups/dnc_gc.toml -o out_files -p /home/foyer/.conda/envs/energy_measure/bin/python
+      sudo scripts/measure.sh -n 2 -s setups/dnc_gc.toml -o out_files -p $(which python)
       ```
 
 * **`scripts/batch_measure.sh`**
