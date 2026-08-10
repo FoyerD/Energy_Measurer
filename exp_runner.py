@@ -10,6 +10,8 @@ from eckity.genetic_operators.selections.tournament_selection import TournamentS
 import tomllib
 from torch.cuda import is_available as is_cuda_aviable
 from eckity_dnc import DeepNeuralCrossoverConfig
+import logging
+logging.getLogger("eckity").setLevel(logging.CRITICAL)
 
 def main(output_dir:str, setup_file:str=None):
 
