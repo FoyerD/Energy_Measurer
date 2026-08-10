@@ -137,7 +137,7 @@ def create_simple_evo(
                         evaluator=evaluator,
                         higher_is_better=higher_is_better,
                         operators_sequence=operators_sequence,
-                        selection_methods=list(map(lambda x: (x, 1/len(selection_methods)),selection_methods))),
+                        selection_methods=selection_methods),
         breeder=breeder if breeder is not None else SimpleBreeder(),
         max_workers=max_workers,
         max_generation=max_generation,
