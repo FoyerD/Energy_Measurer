@@ -1,16 +1,15 @@
 import argparse
 import os
 from eckity.algorithms.simple_evolution import SimpleEvolution
-from eckity.creators import Creator
+from eckity.creators import Creator, GAIntVectorCreator
 from eckity.genetic_operators import GeneticOperator
 from eckity.evaluators import IndividualEvaluator
 import ECkityFactory as EckityFactory
-from DNC.DNC_eckity_wrapper import GAIntegerStringVectorCreator
 from Logger import Logger
 from eckity.genetic_operators.selections.tournament_selection import TournamentSelection
 import tomllib
 from torch.cuda import is_available as is_cuda_aviable
-from DNC.DNC_eckity_wrapper import DeepNeuralCrossoverConfig
+from eckity_dnc import DeepNeuralCrossoverConfig
 
 def main(output_dir:str, setup_file:str=None):
 
@@ -31,17 +30,12 @@ def main(output_dir:str, setup_file:str=None):
     domain_name = config['domain']['name']
     if(domain_name == 'bpp'):
         evaluator, individual_length, min_bound, max_bound = EckityFactory.make_bpp_evaluator(**config['domain']['args'])
-        creator = GAIntegerStringVectorCreator(length=individual_length, bounds=(min_bound, max_bound))
-        higher_is_better = True
-
-    elif(domain_name == 'frozen_lake'):
-        evaluator, individual_length = EckityFactory.make_frozen_lake_evaluator(**config['domain']['args'])
-        creator = GAIntegerStringVectorCreator(length=individual_length, bounds=(0, 3))
+        creator = GAIntVectorCreator(length=individual_length, bounds=(min_bound, max_bound))
         higher_is_better = True
 
     elif(domain_name == 'graph_coloring'):
         evaluator, individual_length, min_bound, max_bound = EckityFactory.make_gc_evaluator(**config['domain']['args'])
-        creator = GAIntegerStringVectorCreator(length=individual_length, bounds=(min_bound, max_bound))
+        creator = GAIntVectorCreator(length=individual_length, bounds=(min_bound, max_bound))
         higher_is_better = True
 
     else:

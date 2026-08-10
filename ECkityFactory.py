@@ -2,7 +2,7 @@ from eckity.algorithms.simple_evolution import SimpleEvolution
 from eckity.subpopulation import Subpopulation
 import json
 import numpy as np
-from DNC.DNC_eckity_wrapper import DeepNeuralCrossover, DeepNeuralCrossoverConfig
+from eckity_dnc import DeepNeuralCrossover
 from DNC import dnc_runner_eckity
 from eckity.evaluators import IndividualEvaluator
 from eckity.breeders import Breeder, SimpleBreeder
