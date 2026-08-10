@@ -11,6 +11,7 @@ from eckity.statistics import Statistics, BestAverageWorstStatistics
 from eckity.evaluators.simple_individual_evaluator import SimpleIndividualEvaluator
 from Logger import Logger
 import networkx as nx
+import utils
 
 def get_statistics_logger():
     logger_statistics = Logger()
@@ -73,13 +74,8 @@ def get_gc_graph(graph_path: str):
 def make_gc_evaluator(graph_path: str):
     G = get_gc_graph(graph_path)
     num_nodes = len(G.nodes())
-    return dnc_runner_eckity.GraphColoringEvaluator(G), num_nodes, 0, num_nodes
+    return utils.GraphColoringEvaluator(G), num_nodes, 0, num_nodes
 
-def make_frozen_lake_evaluator(map = None, **kwargs):
-    fl_eval = dnc_runner_eckity.FrozenLakeEvaluator(map=map, **kwargs)
-    ind_length = fl_eval.get_individual_length()
-    return fl_eval, ind_length
-    
 
 def create_dnc_op(individual_creator,
                   evaluator: SimpleIndividualEvaluator,
@@ -113,7 +109,7 @@ def create_kpoint_crossover(loggers: list = None,
 def create_uniform_mutation(loggers: list = None,
                             log_events:list = None,
                             **kwargs):
-    op = dnc_runner_eckity.IntVectorUniformMutation(**kwargs)
+    op = utils.IntVectorUniformMutation(**kwargs)
 
     if(loggers is not None and log_events is not None
         and len(loggers) == len(log_events)):
