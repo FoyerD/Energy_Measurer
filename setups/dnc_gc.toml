@@ -1,0 +1,24 @@
+[domain]
+    name='graph_coloring'
+    [domain.args]
+        graph_path = "datasets_dnc/graph_coloring/games120.col"
+
+[crossover]
+    name='dnc'
+    [crossover.args]
+        probability = 0.5
+        [crossover.args.dnc_config]
+            batch_size = 2048
+            scheduling_threshold = 0.1
+                embedding_dim = 32
+
+[mutation]
+    name='uniform'
+    [mutation.args]
+        probability = 0.5
+        probability_for_each = 0.1
+        arity = 1
+
+[evolution]
+    max_generation = 6000
+    population_size = 100

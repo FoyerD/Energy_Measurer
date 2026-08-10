@@ -1,6 +1,7 @@
 from tomllib import load as tload
 from sys import argv
 from time import time
+from pathlib import Path
 
 
 
@@ -10,14 +11,17 @@ def get_name(config):
     domain_name = config['domain']['name']
     if (domain_name == 'bpp'):
         exp_dir_name += f"{config['domain']['args']['dataset_name']}__".lower()
+    elif domain_name == 'graph_coloring':
+        instance = Path(config['domain']['args']['graph_path']).name
+        exp_dir_name += f"{domain_name}__{instance}__".lower()
     else:
-        exp_dir_name += f"{domain_name}__"
+        raise ExceptionName(f"Error: Uknown domain_name {domain_name}")
 
     crossover_name = config['crossover']['name']
     if(crossover_name == 'dnc'):
-        exp_dir_name += f"{crossover_name}_bz{config['crossover']['args']['dnc_config']['batch_size']}_fe{config['crossover']['args']['dnc_config']['fitness_epsilon']}__"
-    else:
-        exp_dir_name += f"{crossover_name}__"
+        exp_dir_name += f"{crossover_name}_bz{config['crossover']['args']['dnc_config']['batch_size']}_st{config['crossover']['args']['dnc_config']['scheduling_threshold']}__"
+    elif (crossover_name == 'kpoint'):
+        exp_dir_name += f"{crossover_name}_k{config['crossover']['args']['k']}__"
 
     exp_dir_name += f"{int(time())}"
     return exp_dir_name

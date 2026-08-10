@@ -4,14 +4,13 @@ from eckity.algorithms.simple_evolution import SimpleEvolution
 from eckity.creators import Creator
 from eckity.genetic_operators import GeneticOperator
 from eckity.evaluators import IndividualEvaluator
-import EckityExtended.ECkityFactory as EckityFactory
-from DNC_mid_train.DNC_eckity_wrapper import GAIntegerStringVectorCreator
+import ECkityFactory as EckityFactory
+from DNC.DNC_eckity_wrapper import GAIntegerStringVectorCreator
 from Logger import Logger
 from eckity.genetic_operators.selections.tournament_selection import TournamentSelection
-from eckity.algorithms.simple_evolution import AFTER_GENERATION_EVENT_NAME
 import tomllib
 from torch.cuda import is_available as is_cuda_aviable
-from DNC_mid_train.DNC_eckity_wrapper import DeepNeuralCrossoverConfig
+from DNC.DNC_eckity_wrapper import DeepNeuralCrossoverConfig
 
 def main(output_dir:str, setup_file:str=None):
 
@@ -40,6 +39,11 @@ def main(output_dir:str, setup_file:str=None):
         creator = GAIntegerStringVectorCreator(length=individual_length, bounds=(0, 3))
         higher_is_better = True
 
+    elif(domain_name == 'graph_coloring'):
+        evaluator, individual_length, min_bound, max_bound = EckityFactory.make_gc_evaluator(**config['domain']['args'])
+        creator = GAIntegerStringVectorCreator(length=individual_length, bounds=(min_bound, max_bound))
+        higher_is_better = True
+
     else:
         raise ValueError(f'Domain {domain_name} not recognized')
 
@@ -52,6 +56,7 @@ def main(output_dir:str, setup_file:str=None):
         config['crossover']['args']['dnc_config']['use_device'] = 'cuda' if is_cuda_aviable() else 'cpu'
         config['crossover']['args']['dnc_config']['sequence_length'] = individual_length
         config['crossover']['args']['dnc_config']['num_embeddings'] = individual_length + 1
+        config['crossover']['args']['dnc_config']['higher_is_better'] = higher_is_better
 
         dnc_config = DeepNeuralCrossoverConfig(**config['crossover']['args']['dnc_config'])
         config['crossover']['args']['dnc_config'] = dnc_config
@@ -61,6 +66,9 @@ def main(output_dir:str, setup_file:str=None):
                                                    **config['crossover']['args'])
         
     elif(crossover_name == 'kpoint'):
+        if (config['crossover']['args']['k'] == 'half'):
+            config['crossover']['args']['k'] = individual_length // 2
+
         crossover_op = EckityFactory.create_kpoint_crossover(**config['crossover']['args'])
     else:
         raise ValueError(f'Operator {crossover_name} not recognized')
@@ -90,18 +98,18 @@ def main(output_dir:str, setup_file:str=None):
                                                            higher_is_better=higher_is_better,
                                                            operators_sequence=[crossover_op, mutation_op],
                                                            loggers=[statistics_logger],
-                                                           log_events=[AFTER_GENERATION_EVENT_NAME])
+                                                           log_events=["after_generation"])
     
     statistics_logger.add_best_of_gen_col(evo_algo)
     statistics_logger.add_gen_col(evo_algo)
 
     if(crossover_name == 'dnc'):
         statistics_logger.update_column("TRAINED", lambda: crossover_op.dnc_wrapper.trained)
-        crossover_op.dnc_wrapper.set_best_of_gen_callback(lambda: evo_algo.best_of_gen.fitness.get_pure_fitness() if evo_algo.best_of_gen.fitness is not None else 0)
     else:
         statistics_logger.update_column("TRAINED", lambda: False)
 
-    # Start the experiment
+    print(f"--{setup_file}--")
+    # Start the experimen
     evo_algo.evolve()
     evo_algo.execute()
     

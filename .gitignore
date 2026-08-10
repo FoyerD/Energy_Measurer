@@ -3,18 +3,23 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Setups (the ones included are examples)
-setups/
-!setups/dnc.toml
-!setups/kpoint.toml
+# Setups
+setups/batch_setups/
 
 # Bash scripts to ignore
 scripts/get_exp.sh
+
+# Databases
+graph_baselines.csv
+
+tmp/
 
 
 # C extensions
 *.so
 
+# vscode
+.vscode/
 
 # Distribution / packaging
 .Python
@@ -185,3 +190,10 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# images
+*.png
+*.svg
+
+*.zip
+datasets_dnc/bpp_histograms/*

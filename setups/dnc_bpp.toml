@@ -10,7 +10,8 @@
         probability = 0.5
         [crossover.args.dnc_config]
             batch_size = 2048
-            fitness_epsilon = 0
+            scheduling_threshold = 0
+		embedding_dim = 32
 
 [mutation]
     name='uniform'
