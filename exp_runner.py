@@ -83,7 +83,7 @@ def main(output_dir:str, setup_file:str=None):
     statistics_logger.add_memory_col(units='KB')
     
     # Selection operator
-    selection = TournamentSelection(tournament_size=5, higher_is_better=higher_is_better)
+    selection = TournamentSelection(tournament_size=5)
     evo_algo = EckityFactory.create_simple_evo(population_size=evolution_args['population_size'],
                                                            max_generation=evolution_args['max_generation'],
                                                            individual_creator=creator,
