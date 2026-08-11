@@ -3,7 +3,6 @@ from eckity.subpopulation import Subpopulation
 import json
 import numpy as np
 from eckity_dnc import DeepNeuralCrossover
-from DNC import dnc_runner_eckity
 from eckity.evaluators import IndividualEvaluator
 from eckity.breeders import Breeder, SimpleBreeder
 from eckity.genetic_operators.crossovers.vector_k_point_crossover import VectorKPointsCrossover
@@ -33,7 +32,7 @@ def make_bpp_evaluator(db_path:str, dataset_name:str):
     ind_length = dataset_n_items
     min_bound, max_bound = 0, dataset_n_items - 1
 
-    bpp_eval = dnc_runner_eckity.BinPackingEvaluator(n_items=dataset_n_items, item_weights=dataset_item_weights,
+    bpp_eval = utils.BinPackingEvaluator(n_items=dataset_n_items, item_weights=dataset_item_weights,
                                 bin_capacity=dataset_bin_capacity, fitness_dict=fitness_dict)
     
     return bpp_eval, ind_length, min_bound, max_bound
